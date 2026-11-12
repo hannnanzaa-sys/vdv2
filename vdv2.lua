@@ -1,4 +1,4 @@
--- Lua | Roblox Luau LocalScript | Violence District | HANX HUB FINAL (FIX SKILLCHECK)
+-- Lua | Roblox Luau LocalScript | Violence District | HANX HUB FINAL
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
@@ -7,6 +7,21 @@ local StarterGui = game:GetService("StarterGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local LP = Players.LocalPlayer
+
+local function getGuiParent()
+    if typeof(gethui) == "function" then
+        local ok, res = pcall(gethui)
+        if ok and res then return res end
+    end
+    local cg = game:GetService("CoreGui")
+    local ok = pcall(function()
+        local probe = Instance.new("Folder")
+        probe.Parent = cg
+        probe:Destroy()
+    end)
+    if ok then return cg end
+    return LP:WaitForChild("PlayerGui")
+end
 
 KILLER_RANGE = 12
 local PLAYER_PALLET_RANGE = 8
@@ -19,9 +34,6 @@ StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Captures, false)
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
 end)
 
--- ============================================================
--- LOGIKA ESP HANX HUB
--- ============================================================
 local ESP = { Master = false, Player = false, Killer = false, Name = false, Distance = false, Outline = false, ItemIcon = false, Status = false, HookCount = false, KillerWarn = false, MaxDistance = 1000, Generator = false, GeneratorName = true, Pallet = false, Hook = false, Gate = false, Window = false, SCP = false }
 local ESPColors = { Player = Color3.fromRGB(60, 255, 60), Killer = Color3.fromRGB(255, 60, 60), Generator = Color3.fromRGB(255, 255, 0), GeneratorDone = Color3.fromRGB(0, 255, 0), Pallet = Color3.fromRGB(60, 255, 255), Hook = Color3.fromRGB(255, 105, 180), Gate = Color3.fromRGB(255, 255, 255), Window = Color3.fromRGB(60, 255, 255), SCP = Color3.fromRGB(255, 0, 255) }
 local MapData = { Generators = {}, Windows = {}, Pallets = {}, Hooks = {}, Gates = {}, SCPs = {} }
@@ -146,9 +158,6 @@ updateStaticESP()
 end)
 end
 
--- ============================================================
--- LOGIKA AUTO AIM PISTOL  (FIXED)
--- ============================================================
 local PistolConfig = {
     Enabled = false, Laser = true, WallCheck = false, TargetMode = "Killer",
     LaserBeam = nil, IsAiming = false, TouchInput = nil,
@@ -369,9 +378,6 @@ UIS.InputEnded:Connect(function(input)
     end
 end)
 
--- ============================================================
--- LOGIKA AUTO AIM VEIL  (FIXED)
--- ============================================================
 local VeilConfig = {
     Enabled = false, ShowLaser = true, FOV = 150, SpearSpeed = 165,
     Gravity = workspace.Gravity * 0.5, MaxDist = 200, AutoPredict = false,
@@ -587,9 +593,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ============================================================
--- MIMIW AUTO PARRY (ANIMATION-DRIVEN) -- TIDAK DIUBAH
--- ============================================================
 local AutoParryConfig = { Enabled = false, Range = 18, Delay = 0.08, Cooldown = 0.45, KeyIndex = 1, KillerOnly = true, Facing = true }
 local AutoParryKeys = {
     {"F", Enum.KeyCode.F}, {"Q", Enum.KeyCode.Q},
@@ -635,6 +638,38 @@ local function AutoParryPress()
         task.wait(0.05)
         VirtualInputManager:SendKeyEvent(false, key[2], false, game)
     end)
+    if not ok then
+        ok = pcall(function()
+            local cam = workspace.CurrentCamera
+            local vp = cam and cam.ViewportSize
+            if not vp then return end
+            local id = 9100 + math.random(0, 899)
+            local cx, cy = vp.X / 2, vp.Y / 2
+            VirtualInputManager:SendTouchEvent(id, 0, cx, cy)
+            task.wait(0.04)
+            VirtualInputManager:SendTouchEvent(id, 1, cx, cy)
+            task.wait(0.02)
+            VirtualInputManager:SendTouchEvent(id, 2, cx, cy)
+        end)
+    end
+    if not ok then
+        ok = pcall(function()
+            local pg = LP:FindFirstChildOfClass("PlayerGui")
+            if not pg then return end
+            local slasher = pg:FindFirstChild("Slasher-mob")
+            local controls = slasher and slasher:FindFirstChild("Controls")
+            if not controls then return end
+            local targetBtn = controls:FindFirstChild(key[1])
+                or controls:FindFirstChild(string.lower(key[1]))
+                or controls:FindFirstChild("action")
+                or controls:FindFirstChild("parry")
+            if targetBtn and firesignal and targetBtn.MouseButton1Down then
+                firesignal(targetBtn.MouseButton1Down)
+                task.wait(0.03)
+                if targetBtn.MouseButton1Up then firesignal(targetBtn.MouseButton1Up) end
+            end
+        end)
+    end
     if not ok and keypress and keyrelease then
         local vk = string.byte(key[1])
         local fallbackOk = pcall(function()
@@ -838,8 +873,6 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- FIXED SKILL CHECK (VISUAL UI ONLY) -- TIDAK DIUBAH
--- ============================================================
 local SkillCheckState = { Enabled = false, Mode = "Legit", Busy = false, RandomMode_IsNormal = false, HeartbeatConn = nil }
 
 local function SK_FindButton()
@@ -883,9 +916,6 @@ local function SK_Watch()
     end)
 end
 
--- ============================================================
--- FAST VAULT INTEGRATION (NO BUG) -- TIDAK DIUBAH
--- ============================================================
 local FastVaultEnabled = false
 local ControllerModule
 local VaultRemote
@@ -946,9 +976,6 @@ task.spawn(function()
     task.spawn(function() while task.wait(0.5) do if FastVaultEnabled and VaultRemote then pcall(function() VaultRemote:FireServer(LP) end) end end end)
 end)
 
--- ============================================================
--- UI LIBRARY HANX HUB -- TIDAK DIUBAH
--- ============================================================
 local Theme = { Bg = Color3.fromRGB(12, 12, 16), Panel = Color3.fromRGB(18, 18, 24), Card = Color3.fromRGB(24, 24, 32), CardHover = Color3.fromRGB(32, 32, 42), Border = Color3.fromRGB(48, 48, 58), Text = Color3.fromRGB(240, 240, 245), TextMuted = Color3.fromRGB(140, 140, 155), Accent = Color3.fromRGB(160, 80, 255), Font = Enum.Font.Gotham, FontMedium = Enum.Font.GothamMedium, FontBold = Enum.Font.GothamBold, }
 local function mk(class, props) local obj = Instance.new(class); for k, v in pairs(props or {}) do obj[k] = v end; return obj end
 local function corner(parent, r) mk("UICorner", { CornerRadius = UDim.new(0, r or 6), Parent = parent }) end
@@ -963,7 +990,7 @@ local UI = {}; UI.__index = UI
 local SearchRegistry = {}
 function UI.new()
 local self = setmetatable({}, UI)
-local parent = (gethui and gethui()) or game:GetService("CoreGui")
+local parent = getGuiParent()
 local old = parent:FindFirstChild("HanxHubUI"); if old then old:Destroy() end
 self.Gui = mk("ScreenGui", { Name = "HanxHubUI", ResetOnSpawn = false, IgnoreGuiInset = true, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, Parent = parent })
 local W, H = 860, 520
@@ -1073,9 +1100,6 @@ local idx = 1; for i, v in ipairs(options) do if v == default then idx = i break
 btn.MouseButton1Click:Connect(function() idx = idx % #options + 1; btn.Text = options[idx]; if callback then callback(options[idx]) end end)
 end
 
--- ============================================================
--- BUILD UI & MOUNT FEATURES
--- ============================================================
 local Window = UI.new()
 local TabMain = Window:AddTab("Main")
 local TabSurvivor = Window:AddTab("Survivor")
@@ -1087,9 +1111,6 @@ local TabSettings = Window:AddTab("Settings")
 local function SetTabCardHeight(tab, height) local grid = tab.Page:FindFirstChildOfClass("UIGridLayout"); if grid then grid.CellSize = UDim2.new(0.5, -6, 0, height) end end
 SetTabCardHeight(TabMain, 440); SetTabCardHeight(TabSurvivor, 458); SetTabCardHeight(TabKiller, 440); SetTabCardHeight(TabVisual, 440); SetTabCardHeight(TabTeleport, 440); SetTabCardHeight(TabSettings, 440)
 
--- ============================================================
--- TELEPORT
--- ============================================================
 local TP = { Generators = {}, Hooks = {}, Gates = {}, Pallets = {}, Windows = {}, Idx = { Generator = 1, Hook = 1, Gate = 1, Pallet = 1, Window = 1 }, ScanCooldown = 0 }
 local function TP_Scan(force)
 if not force and tick() - TP.ScanCooldown < 2 then return end
@@ -1147,9 +1168,6 @@ tpGo.MouseButton1Click:Connect(function() if not tpSelectedPlayer or tpSelectedP
 task.spawn(function() task.wait(2); TP_Scan(true) end)
 workspace.ChildAdded:Connect(function(child) if child.Name == "Map" then task.wait(1); TP_Scan(true) end end)
 
--- ============================================================
--- KILLER EXTRAS -- TIDAK DIUBAH
--- ============================================================
 local KillerExtras = { AutoStalk = { Enabled = false, Range = 150, Conn = nil, LastFire = 0 }, CounterParry = { Enabled = false, Distance = 15, Interval = 0.3, AnimId = "rbxassetid://117042998468241", Thread = nil, Track = nil }, NoSlowdown = { Enabled = false }, }
 local function KE_GetRole() if not LP.Team then return "Unknown" end; local n = LP.Team.Name; if n == "Killer" then return "Killer" end; if n == "Survivors" then return "Survivor" end; return "Spectator" end
 local function KE_StalkRemote() local r = ReplicatedStorage:FindFirstChild("Remotes"); local k = r and r:FindFirstChild("Killers"); local s = k and k:FindFirstChild("Stalker"); return s and s:FindFirstChild("StartStalking") end
@@ -1186,9 +1204,6 @@ end)
 end
 task.spawn(function() while true do task.wait(0.2); if KillerExtras.NoSlowdown.Enabled and KE_GetRole() == "Killer" then local char = LP.Character; local hum = char and char:FindFirstChildOfClass("Humanoid"); if hum and hum.WalkSpeed < 16 then hum.WalkSpeed = 16 end end end end)
 
--- ============================================================
--- MAIN -- TIDAK DIUBAH
--- ============================================================
 local Purple = Color3.fromRGB(160, 80, 255); local PurpleDark = Color3.fromRGB(65, 25, 120); local Green = Color3.fromRGB(70, 255, 130); local Orange = Color3.fromRGB(255, 190, 100); local Muted = Color3.fromRGB(155, 150, 175)
 local DEVELOPER_NAME = "HANX HUB"; local SCRIPT_VERSION = "V2"
 local function MainLabel(parent, text, height, color, bold, textSize) return mk("TextLabel", { Size = UDim2.new(1, 0, 0, height or 22), BackgroundTransparency = 1, Text = text, TextColor3 = color or Theme.Text, Font = bold and Theme.FontBold or Theme.Font, TextSize = textSize or 12, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Center, TextWrapped = true, Parent = parent, ZIndex = 15 }) end
@@ -1241,7 +1256,6 @@ MainSection(infoCard, "Developer"); MainLabel(infoCard, DEVELOPER_NAME, 25, Them
 MainSection(infoCard, "Version"); MainLabel(infoCard, SCRIPT_VERSION, 25, Purple, true, 15)
 MainSection(infoCard, "Community"); MainLabel(infoCard, "HANX HUB OFFICIAL", 25, Muted, true, 11)
 
--- SURVIVOR FEATURES
 local survCard = Window:AddCard(TabSurvivor.Page, "⚡", "Survivor Features")
 local function AddSectionDivider(card, title) mk("TextLabel", { Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1, Text = "─── " .. title .. " ───", TextColor3 = Theme.Accent, Font = Theme.FontBold, TextSize = 10, Parent = card, ZIndex = 15 }) end
 
@@ -1292,7 +1306,6 @@ Window:AddSlider(parryCard, "Cooldown (s)", 0.5, 5, 1.5, function(v)
     AutoPalletCooldown = v
 end)
 
--- KILLER
 local killerCard = Window:AddCard(TabKiller.Page, "✂", "Killer Features")
 Window:AddToggle(killerCard, "Enable Veil Silent Aim", false, function(v) VeilConfig.Enabled = v end)
 Window:AddToggle(killerCard, "Auto Predict", false, function(v) VeilConfig.AutoPredict = v end)
@@ -1301,7 +1314,6 @@ Window:AddSlider(killerCard, "Max Distance", 50, 500, 300, function(v) VeilConfi
 Window:AddSlider(killerCard, "FOV (Radius)", 50, 500, 150, function(v) VeilConfig.FOV = v end)
 Window:AddDropdown(killerCard, "Target Part", {"Torso", "Head", "Root"}, "Torso", function(v) VeilConfig.TargetPart = v end)
 
--- Killer Extras
 local killerExtraCard = Window:AddCard(TabKiller.Page, "⚙", "Killer Extras")
 Window:AddToggle(killerExtraCard, "Auto Stalk", false, function(v)
 KillerExtras.AutoStalk.Enabled = v
@@ -1325,7 +1337,6 @@ end)
 Window:AddSlider(killerExtraCard, "Parry Distance", 5, 30, 15, function(v) KillerExtras.CounterParry.Distance = v end)
 Window:AddToggle(killerExtraCard, "No Slowdown Killer", false, function(v) KillerExtras.NoSlowdown.Enabled = v end)
 
--- VISUAL (ESP)
 local espCard = Window:AddCard(TabVisual.Page, "👁", "ESP Settings")
 Window:AddToggle(espCard, "Enable ESP", false, function(v)
 ESP.Master = v
@@ -1343,10 +1354,6 @@ Window:AddSlider(worldCard, "Time Of Day", 0, 24, 14, function(v) game:GetServic
 Window:AddToggle(worldCard, "No Fog", false, function(v) game:GetService("Lighting").FogEnd = v and 100000 or 1000 end)
 Window:AddToggle(worldCard, "No Shadow", false, function(v) game:GetService("Lighting").GlobalShadows = not v end)
 
-
--- ============================================================
--- AUTO PALLET (CHASE + AVAILABILITY STATE) -- TIDAK DIUBAH
--- ============================================================
 local CollectionService = game:GetService("CollectionService")
 
 AutoPalletEnabled = false
@@ -1376,27 +1383,22 @@ local function ResolvePallet(candidate)
     if not candidate or not candidate:IsDescendantOf(workspace) then return nil end
     local model = candidate:IsA("Model") and candidate or candidate:FindFirstAncestorOfClass("Model")
     if not model then return nil end
-
     local hitbox = model:FindFirstChild("hitbox", true)
         or model:FindFirstChild("Hitbox", true)
         or model:FindFirstChild("PrimaryPartPallet", true)
         or model.PrimaryPart
-
     if hitbox and not hitbox:IsA("BasePart") then
         hitbox = hitbox:FindFirstChildWhichIsA("BasePart", true)
     end
     if not hitbox then hitbox = model:FindFirstChildWhichIsA("BasePart", true) end
     if not hitbox then return nil end
-
     return { model = model, hitbox = hitbox }
 end
 
 local function PalletStateAvailable(data)
     if not data or not data.model or not data.hitbox then return false, false end
-
     local explicitState = false
     local nodes = { data.model, data.hitbox }
-
     for _, node in ipairs(nodes) do
         for attribute, value in pairs(node:GetAttributes()) do
             local key = string.lower(tostring(attribute))
@@ -1419,7 +1421,6 @@ local function PalletStateAvailable(data)
             end
         end
     end
-
     for _, node in ipairs(data.model:GetDescendants()) do
         if node:IsA("BoolValue") then
             local key = string.lower(node.Name)
@@ -1433,7 +1434,6 @@ local function PalletStateAvailable(data)
             end
         end
     end
-
     return true, explicitState
 end
 
@@ -1441,7 +1441,6 @@ local function RefreshPalletCandidates(force)
     local now = os.clock()
     if not force and now - PalletScanAt < PalletScanInterval then return end
     PalletScanAt = now
-
     local candidates, seen = {}, {}
     local function addCandidate(instance)
         local data = ResolvePallet(instance)
@@ -1450,11 +1449,9 @@ local function RefreshPalletCandidates(force)
             table.insert(candidates, data.model)
         end
     end
-
     for _, tagged in ipairs(CollectionService:GetTagged("pallet")) do
         addCandidate(tagged)
     end
-
     local map = workspace:FindFirstChild("Map") or workspace
     for _, obj in ipairs(map:GetDescendants()) do
         local name = string.lower(obj.Name)
@@ -1462,14 +1459,12 @@ local function RefreshPalletCandidates(force)
             addCandidate(obj)
         end
     end
-
     PalletCandidates = candidates
 end
 
 local function FindClosestPallet(myRoot)
     if not myRoot then return nil, math.huge end
     RefreshPalletCandidates(false)
-
     local closest, closestDist = nil, math.huge
     for _, model in ipairs(PalletCandidates) do
         if model and model.Parent then
@@ -1479,7 +1474,6 @@ local function FindClosestPallet(myRoot)
                 if available and UsedPallets[data.model] and hasState then
                     UsedPallets[data.model] = nil
                 end
-
                 if available and not UsedPallets[data.model] then
                     local distance = (myRoot.Position - data.hitbox.Position).Magnitude
                     if distance < closestDist then
@@ -1496,19 +1490,16 @@ local function IsKillerChasing(killerRoot, myRoot, distance)
     if not killerRoot or not myRoot then return false end
     local toPlayer = myRoot.Position - killerRoot.Position
     if toPlayer.Magnitude < 0.1 then return false end
-
     local direction = toPlayer.Unit
     local velocity = killerRoot.AssemblyLinearVelocity
     local horizontalVelocity = Vector3.new(velocity.X, 0, velocity.Z)
     local horizontalDirection = Vector3.new(direction.X, 0, direction.Z)
     local closingSpeed = horizontalDirection.Magnitude > 0.1
         and horizontalVelocity:Dot(horizontalDirection.Unit) or 0
-
     local look = killerRoot.CFrame.LookVector
     local horizontalLook = Vector3.new(look.X, 0, look.Z)
     local facingDot = horizontalLook.Magnitude > 0.1 and horizontalDirection.Magnitude > 0.1
         and horizontalLook.Unit:Dot(horizontalDirection.Unit) or -1
-
     local chaseRange = math.max(12, AutoPalletRadius + 5)
     if distance > chaseRange then return false end
     return closingSpeed >= 1.5 or (horizontalVelocity.Magnitude >= 2.5 and facingDot >= 0.65)
@@ -1519,15 +1510,12 @@ local function ExecuteDrop(palletData)
         or not palletData.hitbox or not palletData.hitbox.Parent then
         return false
     end
-
     local available = PalletStateAvailable(palletData)
     if not available or UsedPallets[palletData.model] then return false end
-
     local remotes = ReplicatedStorage:FindFirstChild("Remotes")
     local palletFolder = remotes and remotes:FindFirstChild("Pallet")
     local dropEvent = palletFolder and palletFolder:FindFirstChild("PalletDropEvent")
     if not dropEvent or not dropEvent:IsA("RemoteEvent") then return false end
-
     UsedPallets[palletData.model] = true
     local ok = pcall(function()
         dropEvent:FireServer(palletData.hitbox)
@@ -1542,30 +1530,24 @@ end
 task.spawn(function()
     while task.wait(0.1) do
         if not AutoPalletEnabled then continue end
-
         local _, _, killerRoot = GetKiller()
         local myChar = LP.Character
         local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
         local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
         if not killerRoot or not myRoot or not myHum or myHum.Health <= 0 then continue end
-
         local killerDistance = (killerRoot.Position - myRoot.Position).Magnitude
         if not IsKillerChasing(killerRoot, myRoot, killerDistance) then continue end
-
         local palletData, playerPalletDistance = FindClosestPallet(myRoot)
         if not palletData or playerPalletDistance > math.max(5, AutoPalletRadius) then continue end
-
         local killerPalletDistance = (killerRoot.Position - palletData.hitbox.Position).Magnitude
         local palletThreatRange = math.max(8, AutoPalletRadius * 0.8)
         if killerPalletDistance > palletThreatRange then continue end
         if os.clock() - LastDropTime < AutoPalletCooldown then continue end
-
         if ExecuteDrop(palletData) then
             LastDropTime = os.clock()
         end
     end
 end)
-
 
 pcall(function()
 StarterGui:SetCore("SendNotification", { Title = "HANX HUB", Text = "Script Loaded Successfully!", Duration = 5 })
