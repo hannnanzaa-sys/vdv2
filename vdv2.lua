@@ -1,4 +1,4 @@
--- Lua | Roblox Luau LocalScript | Violence District | HANX HUB FINAL
+-- Lua | Roblox Luau LocalScript | Violence District | HANX HUB (ANDROID MOBILE FIX)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
@@ -7,21 +7,6 @@ local StarterGui = game:GetService("StarterGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local LP = Players.LocalPlayer
-
-local function getGuiParent()
-    if typeof(gethui) == "function" then
-        local ok, res = pcall(gethui)
-        if ok and res then return res end
-    end
-    local cg = game:GetService("CoreGui")
-    local ok = pcall(function()
-        local probe = Instance.new("Folder")
-        probe.Parent = cg
-        probe:Destroy()
-    end)
-    if ok then return cg end
-    return LP:WaitForChild("PlayerGui")
-end
 
 KILLER_RANGE = 12
 local PLAYER_PALLET_RANGE = 8
@@ -34,6 +19,9 @@ StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Captures, false)
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
 end)
 
+-- ============================================================
+-- LOGIKA ESP HANX HUB
+-- ============================================================
 local ESP = { Master = false, Player = false, Killer = false, Name = false, Distance = false, Outline = false, ItemIcon = false, Status = false, HookCount = false, KillerWarn = false, MaxDistance = 1000, Generator = false, GeneratorName = true, Pallet = false, Hook = false, Gate = false, Window = false, SCP = false }
 local ESPColors = { Player = Color3.fromRGB(60, 255, 60), Killer = Color3.fromRGB(255, 60, 60), Generator = Color3.fromRGB(255, 255, 0), GeneratorDone = Color3.fromRGB(0, 255, 0), Pallet = Color3.fromRGB(60, 255, 255), Hook = Color3.fromRGB(255, 105, 180), Gate = Color3.fromRGB(255, 255, 255), Window = Color3.fromRGB(60, 255, 255), SCP = Color3.fromRGB(255, 0, 255) }
 local MapData = { Generators = {}, Windows = {}, Pallets = {}, Hooks = {}, Gates = {}, SCPs = {} }
@@ -158,24 +146,13 @@ updateStaticESP()
 end)
 end
 
-local PistolConfig = {
-    Enabled = false, Laser = true, WallCheck = false, TargetMode = "Killer",
-    LaserBeam = nil, IsAiming = false, TouchInput = nil,
-    LastFire = 0, FireCooldown = 0.08, AimHeightOffset = 0.35, LeadAmount = 0.9,
-}
-
+-- ============================================================
+-- LOGIKA AUTO AIM PISTOL
+-- ============================================================
+local PistolConfig = { Enabled = false, Laser = true, WallCheck = false, TargetMode = "Killer", LaserBeam = nil, IsAiming = false, TouchInput = nil }
 local function pistolIsKiller(p) return p and p.Team and p.Team.Name == "Killer" end
 local function pistolIsSurvivor(p) return p and p.Team and p.Team.Name == "Survivors" end
-
-local function pistolGetEvent()
-    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-    local items = remotes and remotes:FindFirstChild("Items")
-    local tof = items and items:FindFirstChild("Twist of Fate")
-    local fire = tof and tof:FindFirstChild("Fire")
-    if fire and (fire:IsA("RemoteEvent") or fire:IsA("UnreliableRemoteEvent")) then return fire end
-    return nil
-end
-
+local function pistolGetEvent() local remotes = ReplicatedStorage:FindFirstChild("Remotes"); local items = remotes and remotes:FindFirstChild("Items"); local tof = items and items:FindFirstChild("Twist of Fate"); return tof and tof:FindFirstChild("Fire") end
 local function pistolGetGunObject()
     local char = LP.Character
     if not char then return nil end
@@ -188,219 +165,124 @@ local function pistolGetGunObject()
     end
     return base
 end
-
 local function pistolGetOrigin(gunObj)
     if not gunObj then return nil end
-    local muzzleNames = { "muzzle", "muzzleattachment", "firepoint", "barrelend", "barrel", "muzzleflash" }
-    local best, bestScore = nil, -1
+    local muzzleNames = { "muzzle", "muzzleattachment", "firepoint", "barrelend", "barrel" }
     for _, obj in ipairs(gunObj:GetDescendants()) do
         local n = string.lower(obj.Name):gsub("[%s_%-]", "")
-        local score = 0
-        for i, wanted in ipairs(muzzleNames) do
-            if n == wanted then score = #muzzleNames - i + 10; break end
-        end
-        if score > 0 then
-            local pos
-            if obj:IsA("Attachment") then pos = obj.WorldPosition
-            elseif obj:IsA("BasePart") then pos = obj.Position end
-            if pos and score > bestScore then best, bestScore = pos, score end
+        if obj:IsA("Attachment") then
+            for _, wanted in ipairs(muzzleNames) do
+                if n == wanted then return obj.WorldPosition end
+            end
+        elseif obj:IsA("BasePart") then
+            for _, wanted in ipairs(muzzleNames) do
+                if n == wanted then return obj.Position end
+            end
         end
     end
-    if best then return best end
     if gunObj:IsA("BasePart") then return gunObj.Position end
     local part = gunObj:FindFirstChildWhichIsA("BasePart", true)
     return part and part.Position or nil
 end
-
-local function pistolGetBodyAimPoint(targetChar, targetHum)
-    if not targetChar then return nil end
-    local part = targetChar:FindFirstChild("UpperTorso")
-        or targetChar:FindFirstChild("Torso")
-        or targetChar:FindFirstChild("HumanoidRootPart")
-    if not part or not part:IsA("BasePart") then return nil end
-    local basePos = part.Position
-    local hrp = targetChar:FindFirstChild("HumanoidRootPart")
-    if hrp and part ~= hrp then basePos = basePos:Lerp(hrp.Position, 0.35) end
-    basePos = basePos + Vector3.new(0, PistolConfig.AimHeightOffset, 0)
-    if hrp and PistolConfig.LeadAmount > 0 then
-        local vel = hrp.AssemblyLinearVelocity
-        if vel.Magnitude > 0.5 and vel.Magnitude < 80 then
-            basePos = basePos + vel * (PistolConfig.LeadAmount * 0.06)
-        end
-    end
-    return basePos
-end
-
 local function pistolIsVisible(originPos, targetPos, targetChar)
-    local dir = targetPos - originPos; local dist = dir.Magnitude
-    if dist < 0.1 then return true end
-    local params = RaycastParams.new(); params.FilterType = Enum.RaycastFilterType.Exclude
-    local ex = {}
-    if LP.Character then table.insert(ex, LP.Character) end
-    if targetChar then table.insert(ex, targetChar) end
-    if PistolConfig.LaserBeam then table.insert(ex, PistolConfig.LaserBeam) end
-    params.FilterDescendantsInstances = ex
-    return workspace:Raycast(originPos, dir.Unit * dist, params) == nil
+local dir = targetPos - originPos; local dist = dir.Magnitude; if dist < 0.1 then return true end
+local params = RaycastParams.new(); params.FilterType = Enum.RaycastFilterType.Exclude
+local ex = {}; if LP.Character then table.insert(ex, LP.Character) end; if targetChar then table.insert(ex, targetChar) end; if PistolConfig.LaserBeam then table.insert(ex, PistolConfig.LaserBeam) end
+params.FilterDescendantsInstances = ex
+return workspace:Raycast(originPos, dir.Unit * dist, params) == nil
 end
-
 local function pistolGetTargetPos()
-    local gunObj = pistolGetGunObject(); local char = LP.Character
-    if not gunObj or not char then return nil, nil end
-    local hrp = char:FindFirstChild("HumanoidRootPart"); if not hrp then return nil, nil end
-    local myPos = hrp.Position
-    local originPos
-    pcall(function() originPos = pistolGetOrigin(gunObj) end)
-    if not originPos then
-        local arm = char:FindFirstChild("RightHand") or char:FindFirstChild("Right Arm")
-        originPos = arm and arm.Position or (myPos + Vector3.new(0, 1.5, 0))
-    end
-    local function pick(targetChar, targetPos)
-        if not targetPos then return nil, nil end
-        if PistolConfig.WallCheck and not pistolIsVisible(originPos, targetPos, targetChar) then return nil, nil end
-        return originPos, targetPos
-    end
-    if PistolConfig.TargetMode == "Killer" then
-        local closest, closestChar, shortDist = nil, nil, math.huge
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= LP and pistolIsKiller(plr) and plr.Character then
-                local hum = plr.Character:FindFirstChildOfClass("Humanoid")
-                if hum and hum.Health > 0 then
-                    local torso = plr.Character:FindFirstChild("UpperTorso")
-                        or plr.Character:FindFirstChild("Torso")
-                        or plr.Character:FindFirstChild("HumanoidRootPart")
-                    if torso then
-                        local d = (myPos - torso.Position).Magnitude
-                        if d < shortDist then shortDist = d; closest = plr.Character end
-                    end
-                end
-            end
-        end
-        if not closest then return nil, nil end
-        local aim = pistolGetBodyAimPoint(closest, closest:FindFirstChildOfClass("Humanoid"))
-        return pick(closest, aim)
-    else
-        local cam = workspace.CurrentCamera; local camLook = cam.CFrame.LookVector
-        local best, bestChar, bestDot = nil, nil, 0.5
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= LP and pistolIsSurvivor(plr) and plr.Character then
-                local hum = plr.Character:FindFirstChildOfClass("Humanoid")
-                if hum and hum.Health > 0 then
-                    local torso = plr.Character:FindFirstChild("UpperTorso")
-                        or plr.Character:FindFirstChild("Torso")
-                        or plr.Character:FindFirstChild("HumanoidRootPart")
-                    if torso then
-                        local dir = torso.Position - cam.CFrame.Position
-                        if dir.Magnitude > 0.1 then
-                            local dot = camLook:Dot(dir.Unit)
-                            if dot > bestDot then bestDot = dot; best = plr.Character end
-                        end
-                    end
-                end
-            end
-        end
-        if not best then return nil, nil end
-        local aim = pistolGetBodyAimPoint(best, best:FindFirstChildOfClass("Humanoid"))
-        return pick(best, aim)
-    end
+local gunObj = pistolGetGunObject(); local char = LP.Character; if not gunObj or not char then return nil, nil end
+local hrp = char:FindFirstChild("HumanoidRootPart"); if not hrp then return nil, nil end
+local myPos = hrp.Position
+local originPos
+pcall(function() originPos = pistolGetOrigin(gunObj) end)
+if not originPos then
+    local arm = char:FindFirstChild("RightHand") or char:FindFirstChild("Right Arm")
+    originPos = arm and arm.Position or (myPos + Vector3.new(0, 1.5, 0))
 end
-
+local function pick(torso, targetChar) local targetPos = torso.Position; if PistolConfig.WallCheck and not pistolIsVisible(originPos, targetPos, targetChar) then return nil, nil end; return originPos, targetPos end
+if PistolConfig.TargetMode == "Killer" then
+local closest, closestChar, shortDist = nil, nil, math.huge
+for _, plr in ipairs(Players:GetPlayers()) do
+if plr ~= LP and pistolIsKiller(plr) and plr.Character then
+local hum = plr.Character:FindFirstChildOfClass("Humanoid")
+local torso = plr.Character:FindFirstChild("UpperTorso") or plr.Character:FindFirstChild("Torso") or plr.Character:FindFirstChild("HumanoidRootPart")
+if hum and hum.Health > 0 and torso then
+    local d = (myPos - torso.Position).Magnitude
+    if d < shortDist then shortDist = d; closest = torso; closestChar = plr.Character end
+end
+end
+end
+if not closest then return nil, nil end
+return pick(closest, closestChar)
+else
+local cam = workspace.CurrentCamera; local camLook = cam.CFrame.LookVector; local best, bestChar, bestDot = nil, nil, -math.huge
+for _, plr in ipairs(Players:GetPlayers()) do
+if plr ~= LP and pistolIsSurvivor(plr) and plr.Character then
+local hum = plr.Character:FindFirstChildOfClass("Humanoid")
+local torso = plr.Character:FindFirstChild("UpperTorso") or plr.Character:FindFirstChild("Torso") or plr.Character:FindFirstChild("HumanoidRootPart")
+if hum and hum.Health > 0 and torso then
+local dir = torso.Position - cam.CFrame.Position
+if dir.Magnitude > 0.1 then local dot = camLook:Dot(dir.Unit); if dot > 0.5 and dot > bestDot then bestDot = dot; best = torso; bestChar = plr.Character end end
+end
+end
+end
+if not best then return nil, nil end
+return pick(best, bestChar)
+end
+end
 local function pistolUpdateLaser(originPos, targetPos)
-    if not PistolConfig.LaserBeam then
-        local laser = Instance.new("Part")
-        laser.Name = "HANX_PistolLaser"; laser.Anchored = true; laser.CanCollide = false
-        laser.CanTouch = false; laser.CanQuery = false; laser.CastShadow = false
-        laser.Material = Enum.Material.Neon; laser.Color = Color3.fromRGB(255, 105, 180)
-        laser.Parent = workspace; PistolConfig.LaserBeam = laser
-    end
-    local dist = (targetPos - originPos).Magnitude
-    if dist < 0.05 then return end
-    PistolConfig.LaserBeam.Size = Vector3.new(0.05, 0.05, dist)
-    PistolConfig.LaserBeam.CFrame = CFrame.new((originPos + targetPos) / 2, targetPos)
-    PistolConfig.LaserBeam.Transparency = 0
+if not PistolConfig.LaserBeam then
+local laser = Instance.new("Part"); laser.Name = "HANX_PistolLaser"; laser.Anchored = true; laser.CanCollide = false; laser.CanTouch = false; laser.CastShadow = false; laser.Material = Enum.Material.Neon; laser.Color = Color3.fromRGB(255, 105, 180); laser.Parent = workspace; PistolConfig.LaserBeam = laser
 end
-
+local dist = (targetPos - originPos).Magnitude; PistolConfig.LaserBeam.Size = Vector3.new(0.05, 0.05, dist); PistolConfig.LaserBeam.CFrame = CFrame.new((originPos + targetPos) / 2, targetPos); PistolConfig.LaserBeam.Transparency = 0
+end
 local function pistolDoShoot()
-    if not PistolConfig.Enabled then return end
-    local now = os.clock()
-    if now - PistolConfig.LastFire < PistolConfig.FireCooldown then return end
-    local originPos, targetPos = pistolGetTargetPos()
-    if not originPos or not targetPos then return end
-    local ev = pistolGetEvent(); local gunObj = pistolGetGunObject()
-    if not ev or not gunObj then return end
-    local dir = targetPos - originPos
-    if dir.Magnitude < 0.1 then return end
-    PistolConfig.LastFire = now
-    local ok = pcall(function() ev:FireServer(gunObj, dir.Unit) end)
-    if not ok then
-        task.wait(0.02)
-        pcall(function() ev:FireServer(gunObj, dir.Unit) end)
-    end
+if not PistolConfig.Enabled then return end
+local originPos, targetPos = pistolGetTargetPos(); if not originPos or not targetPos then return end
+local ev = pistolGetEvent(); local gunObj = pistolGetGunObject(); if not ev or not gunObj then return end
+local dir = targetPos - originPos; if dir.Magnitude < 0.1 then return end
+pcall(function() ev:FireServer(gunObj, dir.Unit) end)
 end
-
-local function pistolGetMobileBtn()
-    local m = LP.PlayerGui:FindFirstChild("Survivor-mob")
-    local ctrl = m and m:FindFirstChild("Controls")
-    return ctrl and ctrl:FindFirstChild("Gui-mob")
-end
-
-local function pistolTouchOnBtn(input)
-    local b = pistolGetMobileBtn()
-    if not b or not b.Visible then return false end
-    local pos, ap, sz = input.Position, b.AbsolutePosition, b.AbsoluteSize
-    return pos.X >= ap.X and pos.X <= ap.X + sz.X and pos.Y >= ap.Y and pos.Y <= ap.Y + sz.Y
-end
-
+local function pistolGetMobileBtn() local m = LP.PlayerGui:FindFirstChild("Survivor-mob"); local ctrl = m and m:FindFirstChild("Controls"); return ctrl and ctrl:FindFirstChild("Gui-mob") end
+local function pistolTouchOnBtn(input) local b = pistolGetMobileBtn(); if not b or not b.Visible then return false end; local pos, ap, sz = input.Position, b.AbsolutePosition, b.AbsoluteSize; return pos.X >= ap.X and pos.X <= ap.X + sz.X and pos.Y >= ap.Y and pos.Y <= ap.Y + sz.Y end
 RunService.Heartbeat:Connect(function()
-    if not PistolConfig.Enabled or not PistolConfig.Laser then
-        if PistolConfig.LaserBeam then PistolConfig.LaserBeam.Transparency = 1 end
-        return
-    end
-    local originPos, targetPos = pistolGetTargetPos()
-    if originPos and targetPos then pistolUpdateLaser(originPos, targetPos)
-    elseif PistolConfig.LaserBeam then PistolConfig.LaserBeam.Transparency = 1 end
+if not PistolConfig.Enabled or not PistolConfig.Laser then
+    if PistolConfig.LaserBeam then PistolConfig.LaserBeam.Transparency = 1 end
+    return
+end
+local originPos, targetPos = pistolGetTargetPos()
+if originPos and targetPos then
+    pistolUpdateLaser(originPos, targetPos)
+elseif PistolConfig.LaserBeam then
+    PistolConfig.LaserBeam.Transparency = 1
+end
 end)
-
 UIS.InputBegan:Connect(function(input, gp)
-    if gp or not PistolConfig.Enabled then return end
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-        or (input.UserInputType == Enum.UserInputType.Touch and pistolTouchOnBtn(input)) then
-        PistolConfig.IsAiming = true
-        if input.UserInputType == Enum.UserInputType.Touch then PistolConfig.TouchInput = input end
-        pistolDoShoot()
-    end
+if gp or not PistolConfig.Enabled then return end
+if input.UserInputType == Enum.UserInputType.MouseButton1 or (input.UserInputType == Enum.UserInputType.Touch and pistolTouchOnBtn(input)) then PistolConfig.IsAiming = true; if input.UserInputType == Enum.UserInputType.Touch then PistolConfig.TouchInput = input end; pistolDoShoot() end
 end)
-
 UIS.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input == PistolConfig.TouchInput then
-        PistolConfig.IsAiming = false
-        if input == PistolConfig.TouchInput then PistolConfig.TouchInput = nil end
-        if PistolConfig.LaserBeam then PistolConfig.LaserBeam.Transparency = 1 end
-    end
+if input.UserInputType == Enum.UserInputType.MouseButton1 or input == PistolConfig.TouchInput then PistolConfig.IsAiming = false; if input == PistolConfig.TouchInput then PistolConfig.TouchInput = nil end; if PistolConfig.LaserBeam then PistolConfig.LaserBeam.Transparency = 1 end end
 end)
 
+-- ============================================================
+-- LOGIKA AUTO AIM VEIL
+-- ============================================================
 local VeilConfig = {
     Enabled = false, ShowLaser = true, FOV = 150, SpearSpeed = 165,
     Gravity = workspace.Gravity * 0.5, MaxDist = 200, AutoPredict = false,
     TargetPart = "Torso", chargingSpear = false, touchInput = nil,
     attackCooldown = false, LaserBeam = nil, velocityCache = {},
-    LockedTarget = nil, LockedTargetUntil = 0,
+    LockedTarget = nil, LockedTargetUntil = 0
 }
 
 local function veilGetTargetPart(char)
     if not char then return nil end
     if VeilConfig.TargetPart == "Head" then return char:FindFirstChild("Head") end
     if VeilConfig.TargetPart == "Root" then return char:FindFirstChild("HumanoidRootPart") end
-    return char:FindFirstChild("UpperTorso")
-        or char:FindFirstChild("Torso")
-        or char:FindFirstChild("HumanoidRootPart")
-end
-
-local function veilGetOrigin(myChar)
-    if not myChar then return nil end
-    return myChar:FindFirstChild("Head")
-        or myChar:FindFirstChild("RightHand")
-        or myChar:FindFirstChild("Right Arm")
-        or myChar:FindFirstChild("HumanoidRootPart")
+    return char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso") or char:FindFirstChild("HumanoidRootPart")
 end
 
 local function veilIsValidTarget(player, character, part)
@@ -421,16 +303,15 @@ local function veilGetVelocity(part, player)
     if not cache or cache.character ~= player.Character or cache.part ~= part then
         VeilConfig.velocityCache[player] = {
             character = player.Character, part = part, lastPos = pos,
-            lastTime = now, velocity = Vector3.zero,
+            lastTime = now, velocity = Vector3.zero
         }
         return Vector3.zero
     end
     local dt = now - cache.lastTime
-    if dt >= 1 / 120 and dt <= 0.2 then
+    if dt >= 1 / 120 and dt <= 0.25 then
         local raw = (pos - cache.lastPos) / dt
-        if raw.Magnitude <= 90 then cache.velocity = cache.velocity:Lerp(raw, 0.65)
-        else cache.velocity = Vector3.zero end
-    elseif dt > 0.2 then
+        if raw.Magnitude <= 90 then cache.velocity = cache.velocity:Lerp(raw, 0.55) end
+    else
         cache.velocity = Vector3.zero
     end
     cache.lastPos, cache.lastTime = pos, now
@@ -452,7 +333,7 @@ local function veilGetClosestSurvivor()
         if veilIsValidTarget(player, character, part) then
             local screenPos, onScreen = cam:WorldToViewportPoint(part.Position)
             local screenDistance = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
-            if onScreen and screenDistance <= VeilConfig.FOV * 1.35 then
+            if onScreen and screenDistance <= VeilConfig.FOV * 1.25 then
                 locked.Character, locked.Part = character, part
                 return locked
             end
@@ -486,17 +367,15 @@ local function veilGetAimPoint(startPos, targetInfo)
     if not targetInfo or not veilIsValidTarget(targetInfo.Player, targetInfo.Character, targetInfo.Part) then return nil end
     local part = targetInfo.Part
     local targetPos = part.Position
-    local hrp = targetInfo.Character:FindFirstChild("HumanoidRootPart")
-    if hrp and part ~= hrp then targetPos = targetPos:Lerp(hrp.Position, 0.35) end
     local velocity = VeilConfig.AutoPredict and veilGetVelocity(part, targetInfo.Player) or Vector3.zero
     local speed = math.max(VeilConfig.SpearSpeed, 1)
-    local gravity = math.max(0, VeilConfig.Gravity)
     local flightTime = (targetPos - startPos).Magnitude / speed
-    local predictedPos = targetPos
-    for _ = 1, 4 do
-        predictedPos = targetPos + velocity * flightTime
-        flightTime = (predictedPos - startPos).Magnitude / speed
+    for _ = 1, 3 do
+        local predicted = targetPos + velocity * flightTime
+        flightTime = (predicted - startPos).Magnitude / speed
     end
+    local predictedPos = targetPos + velocity * flightTime
+    local gravity = math.max(0, VeilConfig.Gravity)
     return predictedPos + Vector3.new(0, 0.5 * gravity * flightTime * flightTime, 0)
 end
 
@@ -505,19 +384,22 @@ local function veilFire()
     local myChar = LP.Character
     local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
     if not myHum or myHum.Health <= 0 or myChar:GetAttribute("spearmode") ~= true then return end
-    local startPart = veilGetOrigin(myChar)
+    local startPart = myChar:FindFirstChild("Head") or myChar:FindFirstChild("HumanoidRootPart")
     if not startPart then return end
+
     local startPos = startPart.Position
     local targetInfo = veilGetClosestSurvivor()
     local aimPoint = veilGetAimPoint(startPos, targetInfo)
     if not aimPoint then return end
     local delta = aimPoint - startPos
-    if delta.Magnitude < 0.2 then return end
+    if delta.Magnitude < 0.1 then return end
+
     local remotes = ReplicatedStorage:FindFirstChild("Remotes")
     local killers = remotes and remotes:FindFirstChild("Killers")
     local veil = killers and killers:FindFirstChild("Veil")
     local fireRemote = veil and veil:FindFirstChild("Spearthrow")
     if not fireRemote or not (fireRemote:IsA("RemoteEvent") or fireRemote:IsA("UnreliableRemoteEvent")) then return end
+
     local fired = pcall(function()
         fireRemote:FireServer(delta.Unit, VeilConfig.SpearSpeed, startPos)
     end)
@@ -532,6 +414,7 @@ UIS.InputBegan:Connect(function(input, gp)
     if gp and not isTouch then return end
     local char = LP.Character
     if not VeilConfig.Enabled or not char or char:GetAttribute("spearmode") ~= true then return end
+
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         VeilConfig.chargingSpear = true
     elseif isTouch then
@@ -565,20 +448,28 @@ RunService.RenderStepped:Connect(function()
         if VeilConfig.LaserBeam then VeilConfig.LaserBeam.Transparency = 1 end
         return
     end
+
     local target = veilGetClosestSurvivor()
     if not target then
         if VeilConfig.LaserBeam then VeilConfig.LaserBeam.Transparency = 1 end
         return
     end
+
     if not VeilConfig.LaserBeam then
         local laser = Instance.new("Part")
-        laser.Name = "HANX_VeilLaser"; laser.Anchored = true
-        laser.CanCollide = false; laser.CanTouch = false; laser.CanQuery = false
-        laser.CastShadow = false; laser.Material = Enum.Material.Neon
-        laser.Color = Color3.fromRGB(255, 160, 215); laser.Parent = workspace
+        laser.Name = "HANX_VeilLaser"
+        laser.Anchored = true
+        laser.CanCollide = false
+        laser.CanTouch = false
+        laser.CanQuery = false
+        laser.CastShadow = false
+        laser.Material = Enum.Material.Neon
+        laser.Color = Color3.fromRGB(255, 160, 215)
+        laser.Parent = workspace
         VeilConfig.LaserBeam = laser
     end
-    local originPart = veilGetOrigin(myChar)
+
+    local originPart = myChar:FindFirstChild("Head") or myChar:FindFirstChild("HumanoidRootPart")
     local aimPoint = originPart and veilGetAimPoint(originPart.Position, target)
     if aimPoint then
         local originPos = originPart.Position
@@ -589,10 +480,12 @@ RunService.RenderStepped:Connect(function()
             VeilConfig.LaserBeam.Transparency = 0.3
         end
     else
-        if VeilConfig.LaserBeam then VeilConfig.LaserBeam.Transparency = 1 end
+        VeilConfig.LaserBeam.Transparency = 1
     end
 end)
 
+-- MIMIW AUTO PARRY (ANIMATION-DRIVEN)
+-- ============================================================
 local AutoParryConfig = { Enabled = false, Range = 18, Delay = 0.08, Cooldown = 0.45, KeyIndex = 1, KillerOnly = true, Facing = true }
 local AutoParryKeys = {
     {"F", Enum.KeyCode.F}, {"Q", Enum.KeyCode.Q},
@@ -600,28 +493,53 @@ local AutoParryKeys = {
 }
 
 local ParryAttackAnims = {
-    ["rbxassetid://122812055447896"] = true,
-    ["rbxassetid://133963973694098"] = true,
-    ["rbxassetid://117042998468241"] = true,
-    ["rbxassetid://135002183282873"] = true,
-    ["rbxassetid://121216847022485"] = true,
-    ["rbxassetid://132817836308238"] = true,
-    ["rbxassetid://129784271201071"] = true,
-    ["rbxassetid://82666958311998"] = true,
-    ["rbxassetid://78432063483146"] = true,
-    ["rbxassetid://118907603246885"] = true,
-    ["rbxassetid://139369275981139"] = true,
-    ["rbxassetid://110355011987939"] = true,
-    ["rbxassetid://111920872708571"] = true,
-    ["rbxassetid://105374834496520"] = true,
-    ["rbxassetid://138720291317243"] = true,
-    ["rbxassetid://106871536134254"] = true,
-    ["rbxassetid://130593238885843"] = true,
-    ["rbxassetid://115244153053858"] = true,
-    ["rbxassetid://74968262036854"] = true,
-    ["rbxassetid://113255068724446"] = true,
-    ["rbxassetid://98163597193511"] = true,
-    ["rbxassetid://80411309607666"] = true,
+    ["rbxassetid://122812055447896"] = true, -- Veil lunge
+    ["rbxassetid://133963973694098"] = true, -- Mayers Basic
+    ["rbxassetid://117042998468241"] = true, -- Mayers lunge
+    ["rbxassetid://135002183282873"] = true, -- Cure lunge
+    ["rbxassetid://121216847022485"] = true, -- Cure Basic
+    ["rbxassetid://132817836308238"] = true, -- Jeff Basic
+    ["rbxassetid://129784271201071"] = true, -- Jeff lunge
+    ["rbxassetid://82666958311998"] = true, -- Jeff Frenzy
+    ["rbxassetid://78432063483146"] = true, -- Abyssal Basic
+    ["rbxassetid://118907603246885"] = true, -- Abyssal lunge
+    ["rbxassetid://139369275981139"] = true, -- Jason Basic
+    ["rbxassetid://110355011987939"] = true, -- Jason lunge
+    ["rbxassetid://111920872708571"] = true, -- Masked Basic
+    ["rbxassetid://105374834496520"] = true, -- Masked lunge
+    ["rbxassetid://138720291317243"] = true, -- Masked Tony
+    ["rbxassetid://106871536134254"] = true, -- Masked Alex
+    ["rbxassetid://130593238885843"] = true, -- Masked Cobra
+    ["rbxassetid://115244153053858"] = true, -- Masked Cobra lunge
+    ["rbxassetid://74968262036854"] = true, -- Hidden Basic
+    ["rbxassetid://113255068724446"] = true, -- Hidden lunge
+    ["rbxassetid://98163597193511"] = true, -- Hidden S1
+    ["rbxassetid://80411309607666"] = true, -- Abyssal S1
+}
+
+local tbl5 = {
+    ["122812055447896"] = "Veil lunge",
+    ["133963973694098"] = "Mayers Basic",
+    ["117042998468241"] = "Mayers lunge",
+    ["135002183282873"] = "Cure lunge",
+    ["121216847022485"] = "Cure Basic",
+    ["132817836308238"] = "Jeff Basic",
+    ["129784271201071"] = "Jeff lunge",
+    ["82666958311998"] = "Jeff Frenzy",
+    ["78432063483146"] = "Abyssal Basic",
+    ["118907603246885"] = "Abyssal lunge",
+    ["139369275981139"] = "Jason Basic",
+    ["110355011987939"] = "Jason lunge",
+    ["111920872708571"] = "Masked Basic",
+    ["105374834496520"] = "Masked lunge",
+    ["138720291317243"] = "Masked Tony",
+    ["106871536134254"] = "Masked Alex",
+    ["130593238885843"] = "Masked Cobra",
+    ["115244153053858"] = "Masked Cobra lunge",
+    ["74968262036854"] = "Hidden Basic",
+    ["113255068724446"] = "Hidden lunge",
+    ["98163597193511"] = "Hidden S1",
+    ["80411309607666"] = "Abyssal S1",
 }
 
 local AutoParrySeen = setmetatable({}, { __mode = "k" })
@@ -633,43 +551,13 @@ local AutoParryVisuals = { Gui = nil, Label = nil, RangePart = nil }
 local function AutoParryPress()
     local key = AutoParryKeys[AutoParryConfig.KeyIndex]
     if not key then return false end
+
     local ok = pcall(function()
         VirtualInputManager:SendKeyEvent(true, key[2], false, game)
         task.wait(0.05)
         VirtualInputManager:SendKeyEvent(false, key[2], false, game)
     end)
-    if not ok then
-        ok = pcall(function()
-            local cam = workspace.CurrentCamera
-            local vp = cam and cam.ViewportSize
-            if not vp then return end
-            local id = 9100 + math.random(0, 899)
-            local cx, cy = vp.X / 2, vp.Y / 2
-            VirtualInputManager:SendTouchEvent(id, 0, cx, cy)
-            task.wait(0.04)
-            VirtualInputManager:SendTouchEvent(id, 1, cx, cy)
-            task.wait(0.02)
-            VirtualInputManager:SendTouchEvent(id, 2, cx, cy)
-        end)
-    end
-    if not ok then
-        ok = pcall(function()
-            local pg = LP:FindFirstChildOfClass("PlayerGui")
-            if not pg then return end
-            local slasher = pg:FindFirstChild("Slasher-mob")
-            local controls = slasher and slasher:FindFirstChild("Controls")
-            if not controls then return end
-            local targetBtn = controls:FindFirstChild(key[1])
-                or controls:FindFirstChild(string.lower(key[1]))
-                or controls:FindFirstChild("action")
-                or controls:FindFirstChild("parry")
-            if targetBtn and firesignal and targetBtn.MouseButton1Down then
-                firesignal(targetBtn.MouseButton1Down)
-                task.wait(0.03)
-                if targetBtn.MouseButton1Up then firesignal(targetBtn.MouseButton1Up) end
-            end
-        end)
-    end
+
     if not ok and keypress and keyrelease then
         local vk = string.byte(key[1])
         local fallbackOk = pcall(function()
@@ -679,6 +567,7 @@ local function AutoParryPress()
         end)
         ok = fallbackOk
     end
+
     if ok then AutoParryCount += 1 end
     return ok
 end
@@ -686,6 +575,7 @@ end
 local function AutoParryCreateVisuals()
     local playerGui = LP:FindFirstChildOfClass("PlayerGui")
     if not playerGui then return end
+
     local gui = playerGui:FindFirstChild("HANX_AutoParryStatus")
     if not gui then
         gui = Instance.new("ScreenGui")
@@ -693,6 +583,7 @@ local function AutoParryCreateVisuals()
         gui.ResetOnSpawn = false
         gui.IgnoreGuiInset = true
         gui.Parent = playerGui
+
         local label = Instance.new("TextLabel")
         label.Name = "Cooldown"
         label.AnchorPoint = Vector2.new(1, 0)
@@ -707,10 +598,12 @@ local function AutoParryCreateVisuals()
         label.TextStrokeTransparency = 0.75
         label.Text = "PARRY READY"
         label.Parent = gui
+
         local corner = Instance.new("UICorner")
         corner.CornerRadius = UDim.new(0, 6)
         corner.Parent = label
     end
+
     AutoParryVisuals.Gui = gui
     AutoParryVisuals.Label = gui:FindFirstChild("Cooldown")
 end
@@ -721,8 +614,10 @@ local function AutoParryUpdateVisuals(root)
         if AutoParryVisuals.RangePart then AutoParryVisuals.RangePart.Transparency = 1 end
         return
     end
+
     AutoParryCreateVisuals()
     if AutoParryVisuals.Gui then AutoParryVisuals.Gui.Enabled = true end
+
     local remaining = math.max(0, AutoParryConfig.Cooldown - (os.clock() - AutoParryLast))
     if AutoParryVisuals.Label then
         if remaining > 0 then
@@ -733,6 +628,7 @@ local function AutoParryUpdateVisuals(root)
             AutoParryVisuals.Label.TextColor3 = Color3.fromRGB(120, 255, 170)
         end
     end
+
     if root and root.Parent then
         if not AutoParryVisuals.RangePart then
             local ring = Instance.new("Part")
@@ -749,6 +645,7 @@ local function AutoParryUpdateVisuals(root)
             ring.Parent = workspace
             AutoParryVisuals.RangePart = ring
         end
+
         local ring = AutoParryVisuals.RangePart
         ring.Size = Vector3.new(0.06, AutoParryConfig.Range * 2, AutoParryConfig.Range * 2)
         ring.CFrame = root.CFrame * CFrame.new(0, -2.8, 0) * CFrame.Angles(0, 0, math.rad(90))
@@ -760,6 +657,7 @@ end
 
 local function AutoParryIsDowned(char, hum)
     if not char or not hum or hum.Health <= 0 or hum.PlatformStand then return true end
+
     for name, value in pairs(char:GetAttributes()) do
         local n = string.lower(tostring(name))
         if (n:find("knock") or n:find("downed") or n:find("carried")
@@ -768,6 +666,7 @@ local function AutoParryIsDowned(char, hum)
             return true
         end
     end
+
     for _, obj in ipairs(char:GetDescendants()) do
         if obj:IsA("BoolValue") and obj.Value then
             local n = string.lower(obj.Name)
@@ -793,12 +692,14 @@ local function AutoParryIsAttack(track)
     if not track or not track.IsPlaying or track.Looped or not track.Animation then return false end
     local animationId = AutoParryAnimationId(track)
     if not animationId or not ParryAttackAnims[animationId] then return false end
+
     if track.Length > 0 then
         local activeWindow = math.min(0.65, math.max(0.2, track.Length * 0.45))
         if track.TimePosition > activeWindow then return false end
     elseif track.TimePosition > 0.35 then
         return false
     end
+
     return track.WeightCurrent >= 0.2
 end
 
@@ -814,8 +715,10 @@ RunService.Heartbeat:Connect(function()
     local myChar = LP.Character
     local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
     local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+
     AutoParryUpdateVisuals(myRoot)
     if not AutoParryConfig.Enabled then return end
+
     if AutoParryIsDowned(myChar, myHum) then
         AutoParryWasDowned = true
         table.clear(AutoParrySeen)
@@ -826,29 +729,35 @@ RunService.Heartbeat:Connect(function()
         AutoParryLast = 0
     end
     if not myRoot then return end
+
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LP and player.Character and AutoParryGoodTarget(player) then
             local targetChar = player.Character
             local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
             local targetHum = targetChar:FindFirstChildOfClass("Humanoid")
             local animator = targetHum and targetHum:FindFirstChildOfClass("Animator")
+
             if targetRoot and targetHum and targetHum.Health > 0 and animator then
                 local offset = myRoot.Position - targetRoot.Position
                 local distance = offset.Magnitude
+
                 if distance <= AutoParryConfig.Range and distance > 0.1 then
                     local flatOffset = Vector3.new(offset.X, 0, offset.Z)
                     local facingDot = -1
                     if flatOffset.Magnitude > 0.1 then
                         facingDot = targetRoot.CFrame.LookVector:Dot(flatOffset.Unit)
                     end
+
                     if not AutoParryConfig.Facing or facingDot >= 0.2 then
                         for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
                             if not AutoParrySeen[track] and AutoParryIsAttack(track)
                                 and os.clock() - AutoParryLast >= AutoParryConfig.Cooldown then
+
                                 AutoParrySeen[track] = true
                                 AutoParryLast = os.clock()
                                 local capturedChar = myChar
                                 local capturedTarget = targetChar
+
                                 task.delay(AutoParryConfig.Delay, function()
                                     local currentChar = LP.Character
                                     local currentHum = currentChar and currentChar:FindFirstChildOfClass("Humanoid")
@@ -856,6 +765,7 @@ RunService.Heartbeat:Connect(function()
                                     local liveTargetRoot = capturedTarget and capturedTarget:FindFirstChild("HumanoidRootPart")
                                     local stillInRange = currentRoot and liveTargetRoot
                                         and (currentRoot.Position - liveTargetRoot.Position).Magnitude <= AutoParryConfig.Range
+
                                     if AutoParryConfig.Enabled and currentChar == capturedChar
                                         and not AutoParryIsDowned(currentChar, currentHum)
                                         and capturedTarget and capturedTarget.Parent
@@ -873,6 +783,8 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
+-- FIXED SKILL CHECK (VISUAL UI ONLY)
+-- ============================================================
 local SkillCheckState = { Enabled = false, Mode = "Legit", Busy = false, RandomMode_IsNormal = false, HeartbeatConn = nil }
 
 local function SK_FindButton()
@@ -901,13 +813,16 @@ local function SK_Watch()
         local scp = pg:FindFirstChild("SkillCheckPromptGui"); if not scp then return end
         local check = scp:FindFirstChild("Check"); if not check or not check.Visible or not check.Parent then return end
         local line = check:FindFirstChild("Line"); local goal = check:FindFirstChild("Goal"); if not line or not goal then return end
+       
+        -- Murni Legit (hanya mengecek jarum masuk zona hijau)
         local lr = line.Rotation % 360; local gr = goal.Rotation % 360; local lo, hi
-        lo = (gr + 116) % 360; hi = (gr + 140) % 360
+        lo = (gr + 116) % 360; hi = (gr + 140) % 360 -- Zona hijau standar
         local inWindow; if hi < lo then inWindow = (lr >= lo or lr <= hi) else inWindow = (lr >= lo and lr <= hi) end
+
         if inWindow then
             SkillCheckState.Busy = true
             task.spawn(function()
-                task.wait(0.02)
+                task.wait(0.02) -- Jeda natural
                 SK_Trigger()
                 task.wait(0.05)
                 SkillCheckState.Busy = false
@@ -916,6 +831,9 @@ local function SK_Watch()
     end)
 end
 
+-- ============================================================
+-- FAST VAULT INTEGRATION (NO BUG)
+-- ============================================================
 local FastVaultEnabled = false
 local ControllerModule
 local VaultRemote
@@ -938,6 +856,7 @@ task.spawn(function()
     end
     if not controller then return end
     ControllerModule = controller
+
     pcall(function()
         local remotes = ReplicatedStorage:WaitForChild("Remotes", 10)
         if not remotes then return end
@@ -945,14 +864,18 @@ task.spawn(function()
         if not window then return end
         VaultRemote = window:WaitForChild("fastvault", 5)
     end)
+
     local OriginalFacing = controller._isFacingStraightEnough
     local OriginalVault  = controller._onVaultAnimation
+
     if type(OriginalFacing) ~= "function" or type(OriginalVault) ~= "function" then return end
+
     controller._isFacingStraightEnough = function(self, part1, part2, angle)
         if not FastVaultEnabled then return OriginalFacing(self, part1, part2, angle) end
         pcall(function() if self.character then self.character:SetAttribute("speed", 30) end end)
         return true, 0
     end
+
     controller._onVaultAnimation = function(self, vaultPoint, sprinting, requestId)
         if not FastVaultEnabled then return OriginalVault(self, vaultPoint, sprinting, requestId) end
         if self.isVaulting then return end
@@ -976,6 +899,9 @@ task.spawn(function()
     task.spawn(function() while task.wait(0.5) do if FastVaultEnabled and VaultRemote then pcall(function() VaultRemote:FireServer(LP) end) end end end)
 end)
 
+-- ============================================================
+-- UI LIBRARY HANX HUB (ANDROID MOBILE FIX)
+-- ============================================================
 local Theme = { Bg = Color3.fromRGB(12, 12, 16), Panel = Color3.fromRGB(18, 18, 24), Card = Color3.fromRGB(24, 24, 32), CardHover = Color3.fromRGB(32, 32, 42), Border = Color3.fromRGB(48, 48, 58), Text = Color3.fromRGB(240, 240, 245), TextMuted = Color3.fromRGB(140, 140, 155), Accent = Color3.fromRGB(160, 80, 255), Font = Enum.Font.Gotham, FontMedium = Enum.Font.GothamMedium, FontBold = Enum.Font.GothamBold, }
 local function mk(class, props) local obj = Instance.new(class); for k, v in pairs(props or {}) do obj[k] = v end; return obj end
 local function corner(parent, r) mk("UICorner", { CornerRadius = UDim.new(0, r or 6), Parent = parent }) end
@@ -990,10 +916,14 @@ local UI = {}; UI.__index = UI
 local SearchRegistry = {}
 function UI.new()
 local self = setmetatable({}, UI)
-local parent = getGuiParent()
+-- FIX ANDROID: Pindah dari gethui/CoreGui ke PlayerGui
+local parent = LP:WaitForChild("PlayerGui")
 local old = parent:FindFirstChild("HanxHubUI"); if old then old:Destroy() end
-self.Gui = mk("ScreenGui", { Name = "HanxHubUI", ResetOnSpawn = false, IgnoreGuiInset = true, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, Parent = parent })
-local W, H = 860, 520
+-- FIX ANDROID: DisplayOrder tinggi biar nutupin UI game
+self.Gui = mk("ScreenGui", { Name = "HanxHubUI", ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = 999, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, Parent = parent })
+-- FIX ANDROID: Ukuran diubah jadi muat di HP
+local W, H = 340, 240
+-- FIX ANDROID: Posisi tepat di tengah layar
 local root = mk("Frame", { Name = "Root", Size = UDim2.fromOffset(W, H), Position = UDim2.new(0.5, -W/2, 0.5, -H/2), BackgroundColor3 = Theme.Bg, BorderSizePixel = 0, Parent = self.Gui, ZIndex = 10 })
 corner(root, 12); stroke(root, Theme.Border, 1)
 local bgLayer = mk("Frame", { Name = "NeonBackground", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(5, 3, 12), BorderSizePixel = 0, BackgroundTransparency = 0.22, ClipsDescendants = true, Parent = root, ZIndex = 10 })
@@ -1100,6 +1030,9 @@ local idx = 1; for i, v in ipairs(options) do if v == default then idx = i break
 btn.MouseButton1Click:Connect(function() idx = idx % #options + 1; btn.Text = options[idx]; if callback then callback(options[idx]) end end)
 end
 
+-- ============================================================
+-- BUILD UI & MOUNT FEATURES
+-- ============================================================
 local Window = UI.new()
 local TabMain = Window:AddTab("Main")
 local TabSurvivor = Window:AddTab("Survivor")
@@ -1111,6 +1044,9 @@ local TabSettings = Window:AddTab("Settings")
 local function SetTabCardHeight(tab, height) local grid = tab.Page:FindFirstChildOfClass("UIGridLayout"); if grid then grid.CellSize = UDim2.new(0.5, -6, 0, height) end end
 SetTabCardHeight(TabMain, 440); SetTabCardHeight(TabSurvivor, 458); SetTabCardHeight(TabKiller, 440); SetTabCardHeight(TabVisual, 440); SetTabCardHeight(TabTeleport, 440); SetTabCardHeight(TabSettings, 440)
 
+-- ============================================================
+-- TELEPORT
+-- ============================================================
 local TP = { Generators = {}, Hooks = {}, Gates = {}, Pallets = {}, Windows = {}, Idx = { Generator = 1, Hook = 1, Gate = 1, Pallet = 1, Window = 1 }, ScanCooldown = 0 }
 local function TP_Scan(force)
 if not force and tick() - TP.ScanCooldown < 2 then return end
@@ -1168,6 +1104,9 @@ tpGo.MouseButton1Click:Connect(function() if not tpSelectedPlayer or tpSelectedP
 task.spawn(function() task.wait(2); TP_Scan(true) end)
 workspace.ChildAdded:Connect(function(child) if child.Name == "Map" then task.wait(1); TP_Scan(true) end end)
 
+-- ============================================================
+-- KILLER EXTRAS
+-- ============================================================
 local KillerExtras = { AutoStalk = { Enabled = false, Range = 150, Conn = nil, LastFire = 0 }, CounterParry = { Enabled = false, Distance = 15, Interval = 0.3, AnimId = "rbxassetid://117042998468241", Thread = nil, Track = nil }, NoSlowdown = { Enabled = false }, }
 local function KE_GetRole() if not LP.Team then return "Unknown" end; local n = LP.Team.Name; if n == "Killer" then return "Killer" end; if n == "Survivors" then return "Survivor" end; return "Spectator" end
 local function KE_StalkRemote() local r = ReplicatedStorage:FindFirstChild("Remotes"); local k = r and r:FindFirstChild("Killers"); local s = k and k:FindFirstChild("Stalker"); return s and s:FindFirstChild("StartStalking") end
@@ -1204,6 +1143,9 @@ end)
 end
 task.spawn(function() while true do task.wait(0.2); if KillerExtras.NoSlowdown.Enabled and KE_GetRole() == "Killer" then local char = LP.Character; local hum = char and char:FindFirstChildOfClass("Humanoid"); if hum and hum.WalkSpeed < 16 then hum.WalkSpeed = 16 end end end end)
 
+-- ============================================================
+-- MAIN
+-- ============================================================
 local Purple = Color3.fromRGB(160, 80, 255); local PurpleDark = Color3.fromRGB(65, 25, 120); local Green = Color3.fromRGB(70, 255, 130); local Orange = Color3.fromRGB(255, 190, 100); local Muted = Color3.fromRGB(155, 150, 175)
 local DEVELOPER_NAME = "HANX HUB"; local SCRIPT_VERSION = "V2"
 local function MainLabel(parent, text, height, color, bold, textSize) return mk("TextLabel", { Size = UDim2.new(1, 0, 0, height or 22), BackgroundTransparency = 1, Text = text, TextColor3 = color or Theme.Text, Font = bold and Theme.FontBold or Theme.Font, TextSize = textSize or 12, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Center, TextWrapped = true, Parent = parent, ZIndex = 15 }) end
@@ -1256,6 +1198,7 @@ MainSection(infoCard, "Developer"); MainLabel(infoCard, DEVELOPER_NAME, 25, Them
 MainSection(infoCard, "Version"); MainLabel(infoCard, SCRIPT_VERSION, 25, Purple, true, 15)
 MainSection(infoCard, "Community"); MainLabel(infoCard, "HANX HUB OFFICIAL", 25, Muted, true, 11)
 
+-- SURVIVOR FEATURES
 local survCard = Window:AddCard(TabSurvivor.Page, "⚡", "Survivor Features")
 local function AddSectionDivider(card, title) mk("TextLabel", { Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1, Text = "─── " .. title .. " ───", TextColor3 = Theme.Accent, Font = Theme.FontBold, TextSize = 10, Parent = card, ZIndex = 15 }) end
 
@@ -1306,6 +1249,7 @@ Window:AddSlider(parryCard, "Cooldown (s)", 0.5, 5, 1.5, function(v)
     AutoPalletCooldown = v
 end)
 
+-- KILLER
 local killerCard = Window:AddCard(TabKiller.Page, "✂", "Killer Features")
 Window:AddToggle(killerCard, "Enable Veil Silent Aim", false, function(v) VeilConfig.Enabled = v end)
 Window:AddToggle(killerCard, "Auto Predict", false, function(v) VeilConfig.AutoPredict = v end)
@@ -1314,6 +1258,7 @@ Window:AddSlider(killerCard, "Max Distance", 50, 500, 300, function(v) VeilConfi
 Window:AddSlider(killerCard, "FOV (Radius)", 50, 500, 150, function(v) VeilConfig.FOV = v end)
 Window:AddDropdown(killerCard, "Target Part", {"Torso", "Head", "Root"}, "Torso", function(v) VeilConfig.TargetPart = v end)
 
+-- Killer Extras
 local killerExtraCard = Window:AddCard(TabKiller.Page, "⚙", "Killer Extras")
 Window:AddToggle(killerExtraCard, "Auto Stalk", false, function(v)
 KillerExtras.AutoStalk.Enabled = v
@@ -1337,6 +1282,7 @@ end)
 Window:AddSlider(killerExtraCard, "Parry Distance", 5, 30, 15, function(v) KillerExtras.CounterParry.Distance = v end)
 Window:AddToggle(killerExtraCard, "No Slowdown Killer", false, function(v) KillerExtras.NoSlowdown.Enabled = v end)
 
+-- VISUAL (ESP)
 local espCard = Window:AddCard(TabVisual.Page, "👁", "ESP Settings")
 Window:AddToggle(espCard, "Enable ESP", false, function(v)
 ESP.Master = v
@@ -1354,6 +1300,11 @@ Window:AddSlider(worldCard, "Time Of Day", 0, 24, 14, function(v) game:GetServic
 Window:AddToggle(worldCard, "No Fog", false, function(v) game:GetService("Lighting").FogEnd = v and 100000 or 1000 end)
 Window:AddToggle(worldCard, "No Shadow", false, function(v) game:GetService("Lighting").GlobalShadows = not v end)
 
+
+-- ============================================================
+-- ============================================================
+-- AUTO PALLET (CHASE + AVAILABILITY STATE)
+-- ============================================================
 local CollectionService = game:GetService("CollectionService")
 
 AutoPalletEnabled = false
@@ -1383,22 +1334,27 @@ local function ResolvePallet(candidate)
     if not candidate or not candidate:IsDescendantOf(workspace) then return nil end
     local model = candidate:IsA("Model") and candidate or candidate:FindFirstAncestorOfClass("Model")
     if not model then return nil end
+
     local hitbox = model:FindFirstChild("hitbox", true)
         or model:FindFirstChild("Hitbox", true)
         or model:FindFirstChild("PrimaryPartPallet", true)
         or model.PrimaryPart
+
     if hitbox and not hitbox:IsA("BasePart") then
         hitbox = hitbox:FindFirstChildWhichIsA("BasePart", true)
     end
     if not hitbox then hitbox = model:FindFirstChildWhichIsA("BasePart", true) end
     if not hitbox then return nil end
+
     return { model = model, hitbox = hitbox }
 end
 
 local function PalletStateAvailable(data)
     if not data or not data.model or not data.hitbox then return false, false end
+
     local explicitState = false
     local nodes = { data.model, data.hitbox }
+
     for _, node in ipairs(nodes) do
         for attribute, value in pairs(node:GetAttributes()) do
             local key = string.lower(tostring(attribute))
@@ -1421,6 +1377,7 @@ local function PalletStateAvailable(data)
             end
         end
     end
+
     for _, node in ipairs(data.model:GetDescendants()) do
         if node:IsA("BoolValue") then
             local key = string.lower(node.Name)
@@ -1434,6 +1391,7 @@ local function PalletStateAvailable(data)
             end
         end
     end
+
     return true, explicitState
 end
 
@@ -1441,6 +1399,7 @@ local function RefreshPalletCandidates(force)
     local now = os.clock()
     if not force and now - PalletScanAt < PalletScanInterval then return end
     PalletScanAt = now
+
     local candidates, seen = {}, {}
     local function addCandidate(instance)
         local data = ResolvePallet(instance)
@@ -1449,9 +1408,11 @@ local function RefreshPalletCandidates(force)
             table.insert(candidates, data.model)
         end
     end
+
     for _, tagged in ipairs(CollectionService:GetTagged("pallet")) do
         addCandidate(tagged)
     end
+
     local map = workspace:FindFirstChild("Map") or workspace
     for _, obj in ipairs(map:GetDescendants()) do
         local name = string.lower(obj.Name)
@@ -1459,12 +1420,14 @@ local function RefreshPalletCandidates(force)
             addCandidate(obj)
         end
     end
+
     PalletCandidates = candidates
 end
 
 local function FindClosestPallet(myRoot)
     if not myRoot then return nil, math.huge end
     RefreshPalletCandidates(false)
+
     local closest, closestDist = nil, math.huge
     for _, model in ipairs(PalletCandidates) do
         if model and model.Parent then
@@ -1474,6 +1437,7 @@ local function FindClosestPallet(myRoot)
                 if available and UsedPallets[data.model] and hasState then
                     UsedPallets[data.model] = nil
                 end
+
                 if available and not UsedPallets[data.model] then
                     local distance = (myRoot.Position - data.hitbox.Position).Magnitude
                     if distance < closestDist then
@@ -1490,16 +1454,19 @@ local function IsKillerChasing(killerRoot, myRoot, distance)
     if not killerRoot or not myRoot then return false end
     local toPlayer = myRoot.Position - killerRoot.Position
     if toPlayer.Magnitude < 0.1 then return false end
+
     local direction = toPlayer.Unit
     local velocity = killerRoot.AssemblyLinearVelocity
     local horizontalVelocity = Vector3.new(velocity.X, 0, velocity.Z)
     local horizontalDirection = Vector3.new(direction.X, 0, direction.Z)
     local closingSpeed = horizontalDirection.Magnitude > 0.1
         and horizontalVelocity:Dot(horizontalDirection.Unit) or 0
+
     local look = killerRoot.CFrame.LookVector
     local horizontalLook = Vector3.new(look.X, 0, look.Z)
     local facingDot = horizontalLook.Magnitude > 0.1 and horizontalDirection.Magnitude > 0.1
         and horizontalLook.Unit:Dot(horizontalDirection.Unit) or -1
+
     local chaseRange = math.max(12, AutoPalletRadius + 5)
     if distance > chaseRange then return false end
     return closingSpeed >= 1.5 or (horizontalVelocity.Magnitude >= 2.5 and facingDot >= 0.65)
@@ -1510,12 +1477,15 @@ local function ExecuteDrop(palletData)
         or not palletData.hitbox or not palletData.hitbox.Parent then
         return false
     end
+
     local available = PalletStateAvailable(palletData)
     if not available or UsedPallets[palletData.model] then return false end
+
     local remotes = ReplicatedStorage:FindFirstChild("Remotes")
     local palletFolder = remotes and remotes:FindFirstChild("Pallet")
     local dropEvent = palletFolder and palletFolder:FindFirstChild("PalletDropEvent")
     if not dropEvent or not dropEvent:IsA("RemoteEvent") then return false end
+
     UsedPallets[palletData.model] = true
     local ok = pcall(function()
         dropEvent:FireServer(palletData.hitbox)
@@ -1530,24 +1500,30 @@ end
 task.spawn(function()
     while task.wait(0.1) do
         if not AutoPalletEnabled then continue end
+
         local _, _, killerRoot = GetKiller()
         local myChar = LP.Character
         local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
         local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
         if not killerRoot or not myRoot or not myHum or myHum.Health <= 0 then continue end
+
         local killerDistance = (killerRoot.Position - myRoot.Position).Magnitude
         if not IsKillerChasing(killerRoot, myRoot, killerDistance) then continue end
+
         local palletData, playerPalletDistance = FindClosestPallet(myRoot)
         if not palletData or playerPalletDistance > math.max(5, AutoPalletRadius) then continue end
+
         local killerPalletDistance = (killerRoot.Position - palletData.hitbox.Position).Magnitude
         local palletThreatRange = math.max(8, AutoPalletRadius * 0.8)
         if killerPalletDistance > palletThreatRange then continue end
         if os.clock() - LastDropTime < AutoPalletCooldown then continue end
+
         if ExecuteDrop(palletData) then
             LastDropTime = os.clock()
         end
     end
 end)
+
 
 pcall(function()
 StarterGui:SetCore("SendNotification", { Title = "HANX HUB", Text = "Script Loaded Successfully!", Duration = 5 })
