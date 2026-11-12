@@ -147,7 +147,7 @@ end)
 end
 
 -- ============================================================
--- LOGIKA AUTO AIM PISTOL  (FIXED — presisi ke badan killer)
+-- LOGIKA AUTO AIM PISTOL  (FIXED)
 -- ============================================================
 local PistolConfig = {
     Enabled = false, Laser = true, WallCheck = false, TargetMode = "Killer",
@@ -370,7 +370,7 @@ UIS.InputEnded:Connect(function(input)
 end)
 
 -- ============================================================
--- LOGIKA AUTO AIM VEIL  (FIXED — presisi lempar tombak ke survivor)
+-- LOGIKA AUTO AIM VEIL  (FIXED)
 -- ============================================================
 local VeilConfig = {
     Enabled = false, ShowLaser = true, FOV = 150, SpearSpeed = 165,
@@ -588,7 +588,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- ============================================================
--- MIMIW AUTO PARRY (ANIMATION-DRIVEN)
+-- MIMIW AUTO PARRY (ANIMATION-DRIVEN) -- TIDAK DIUBAH
 -- ============================================================
 local AutoParryConfig = { Enabled = false, Range = 18, Delay = 0.08, Cooldown = 0.45, KeyIndex = 1, KillerOnly = true, Facing = true }
 local AutoParryKeys = {
@@ -838,7 +838,7 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- FIXED SKILL CHECK (VISUAL UI ONLY)
+-- FIXED SKILL CHECK (VISUAL UI ONLY) -- TIDAK DIUBAH
 -- ============================================================
 local SkillCheckState = { Enabled = false, Mode = "Legit", Busy = false, RandomMode_IsNormal = false, HeartbeatConn = nil }
 
@@ -884,7 +884,7 @@ local function SK_Watch()
 end
 
 -- ============================================================
--- FAST VAULT INTEGRATION (NO BUG)
+-- FAST VAULT INTEGRATION (NO BUG) -- TIDAK DIUBAH
 -- ============================================================
 local FastVaultEnabled = false
 local ControllerModule
@@ -947,7 +947,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- UI LIBRARY HANX HUB
+-- UI LIBRARY HANX HUB -- TIDAK DIUBAH
 -- ============================================================
 local Theme = { Bg = Color3.fromRGB(12, 12, 16), Panel = Color3.fromRGB(18, 18, 24), Card = Color3.fromRGB(24, 24, 32), CardHover = Color3.fromRGB(32, 32, 42), Border = Color3.fromRGB(48, 48, 58), Text = Color3.fromRGB(240, 240, 245), TextMuted = Color3.fromRGB(140, 140, 155), Accent = Color3.fromRGB(160, 80, 255), Font = Enum.Font.Gotham, FontMedium = Enum.Font.GothamMedium, FontBold = Enum.Font.GothamBold, }
 local function mk(class, props) local obj = Instance.new(class); for k, v in pairs(props or {}) do obj[k] = v end; return obj end
@@ -1148,7 +1148,7 @@ task.spawn(function() task.wait(2); TP_Scan(true) end)
 workspace.ChildAdded:Connect(function(child) if child.Name == "Map" then task.wait(1); TP_Scan(true) end end)
 
 -- ============================================================
--- KILLER EXTRAS
+-- KILLER EXTRAS -- TIDAK DIUBAH
 -- ============================================================
 local KillerExtras = { AutoStalk = { Enabled = false, Range = 150, Conn = nil, LastFire = 0 }, CounterParry = { Enabled = false, Distance = 15, Interval = 0.3, AnimId = "rbxassetid://117042998468241", Thread = nil, Track = nil }, NoSlowdown = { Enabled = false }, }
 local function KE_GetRole() if not LP.Team then return "Unknown" end; local n = LP.Team.Name; if n == "Killer" then return "Killer" end; if n == "Survivors" then return "Survivor" end; return "Spectator" end
@@ -1187,7 +1187,7 @@ end
 task.spawn(function() while true do task.wait(0.2); if KillerExtras.NoSlowdown.Enabled and KE_GetRole() == "Killer" then local char = LP.Character; local hum = char and char:FindFirstChildOfClass("Humanoid"); if hum and hum.WalkSpeed < 16 then hum.WalkSpeed = 16 end end end end)
 
 -- ============================================================
--- MAIN
+-- MAIN -- TIDAK DIUBAH
 -- ============================================================
 local Purple = Color3.fromRGB(160, 80, 255); local PurpleDark = Color3.fromRGB(65, 25, 120); local Green = Color3.fromRGB(70, 255, 130); local Orange = Color3.fromRGB(255, 190, 100); local Muted = Color3.fromRGB(155, 150, 175)
 local DEVELOPER_NAME = "HANX HUB"; local SCRIPT_VERSION = "V2"
@@ -1345,8 +1345,7 @@ Window:AddToggle(worldCard, "No Shadow", false, function(v) game:GetService("Lig
 
 
 -- ============================================================
--- ============================================================
--- AUTO PALLET (CHASE + AVAILABILITY STATE)
+-- AUTO PALLET (CHASE + AVAILABILITY STATE) -- TIDAK DIUBAH
 -- ============================================================
 local CollectionService = game:GetService("CollectionService")
 
