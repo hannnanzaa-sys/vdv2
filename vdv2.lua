@@ -880,7 +880,7 @@ task.spawn(function()
         if not FastVaultEnabled then return OriginalVault(self, vaultPoint, sprinting, requestId) end
         if self.isVaulting then return end
         if self.isSlidingPallet ~= nil then self.isSlidingPallet = false end
-                if self.character then pcall(function() self.character:SetAttribute("vaultspeed", 2.0) end) end
+        if self.character then pcall(function() self.character:SetAttribute("vaultspeed", 2.0) end) end
         local packed = table.pack(pcall(function() return OriginalVault(self, vaultPoint, true, requestId) end))
         if not packed[1] then if self.character then pcall(function() self.character:SetAttribute("vaultspeed", 1) end) end; return end
         task.delay(0.15, function()
@@ -920,9 +920,9 @@ local self = setmetatable({}, UI)
 local parent = LP:WaitForChild("PlayerGui")
 local old = parent:FindFirstChild("HanxHubUI"); if old then old:Destroy() end
 self.Gui = mk("ScreenGui", { Name = "HanxHubUI", ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = 999, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, Parent = parent })
--- FIX ANDROID: Ukuran diubah jadi muat di HP
-local W, H = 340, 240
-local root = mk("Frame", { Name = "Root", Size = UDim2.fromOffset(W, H), Position = UDim2.new(0.5, -W/2, 0.5, -H/2), BackgroundColor3 = Theme.Bg, BorderSizePixel = 0, Parent = self.Gui, ZIndex = 10 })
+-- FIX ANDROID: Ukuran window muat di HP (2 kolom)
+local W, H = 720, 330
+local root = mk("Frame", { Name = "Root", Size = UDim2.fromOffset(W, H), Position = UDim2.new(0.5, -W/2, 0.5, -H/2 + 25), BackgroundColor3 = Theme.Bg, BorderSizePixel = 0, Parent = self.Gui, ZIndex = 10 })
 corner(root, 12); stroke(root, Theme.Border, 1)
 local bgLayer = mk("Frame", { Name = "NeonBackground", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(5, 3, 12), BorderSizePixel = 0, BackgroundTransparency = 0.22, ClipsDescendants = true, Parent = root, ZIndex = 10 })
 corner(bgLayer, 12)
@@ -948,16 +948,16 @@ local closeBtn = mk("TextButton", { Size = UDim2.fromOffset(28, 28), Position = 
 local tray = mk("TextButton", { Size = UDim2.fromOffset(120, 36), Position = UDim2.new(0.5, -60, 0, 20), BackgroundColor3 = Theme.Card, Text = "HANX HUB", TextColor3 = Theme.Text, Font = Theme.FontBold, TextSize = 12, Visible = false, Parent = self.Gui, ZIndex = 20 }); corner(tray, 8); stroke(tray, Theme.Border, 1)
 local minimized = false; local function toggleMin() minimized = not minimized; root.Visible = not minimized; tray.Visible = minimized end
 minBtn.MouseButton1Click:Connect(toggleMin); tray.MouseButton1Click:Connect(toggleMin); closeBtn.MouseButton1Click:Connect(function() self.Gui:Destroy() end)
-local sidebar = mk("Frame", { Size = UDim2.new(0, 200, 1, -74), Position = UDim2.new(0, 10, 0, 64), BackgroundColor3 = Theme.Panel, BackgroundTransparency = 0.4, BorderSizePixel = 0, Parent = root, ZIndex = 11 }); corner(sidebar, 10); stroke(sidebar, Theme.Border, 1)
+local sidebar = mk("Frame", { Size = UDim2.new(0, 140, 1, -74), Position = UDim2.new(0, 10, 0, 64), BackgroundColor3 = Theme.Panel, BackgroundTransparency = 0.4, BorderSizePixel = 0, Parent = root, ZIndex = 11 }); corner(sidebar, 10); stroke(sidebar, Theme.Border, 1)
 local searchBar = mk("Frame", { Name = "SearchBar", Size = UDim2.new(1, -20, 0, 32), Position = UDim2.fromOffset(10, 10), BackgroundColor3 = Theme.Bg, BackgroundTransparency = 0.35, BorderSizePixel = 0, Parent = sidebar, ZIndex = 13 }); corner(searchBar, 8); stroke(searchBar, Theme.Border, 1)
 self.GlobalSearchBox = mk("TextBox", { Name = "FeatureSearch", Size = UDim2.new(1, -20, 1, 0), Position = UDim2.fromOffset(10, 0), BackgroundTransparency = 1, Text = "", PlaceholderText = "Search features...", PlaceholderColor3 = Theme.TextMuted, TextColor3 = Theme.Text, Font = Theme.Font, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left, ClearTextOnFocus = false, Parent = searchBar, ZIndex = 14 })
-local navList = mk("Frame", { Size = UDim2.new(1, -20, 1, -122), Position = UDim2.fromOffset(10, 52), BackgroundTransparency = 1, Parent = sidebar, ZIndex = 12 }); mk("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = navList })
-local profile = mk("Frame", { Size = UDim2.new(1, -20, 0, 54), Position = UDim2.new(0, 10, 1, -64), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.3, Parent = sidebar, ZIndex = 12 }); corner(profile, 8); stroke(profile, Theme.Border, 1)
+local navList = mk("ScrollingFrame", { ScrollBarThickness = 0, BorderSizePixel = 0, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Size = UDim2.new(1, -20, 1, -62), Position = UDim2.fromOffset(10, 52), BackgroundTransparency = 1, Parent = sidebar, ZIndex = 12 }); mk("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = navList })
+local profile = mk("Frame", { Visible = false, Size = UDim2.new(1, -20, 0, 54), Position = UDim2.new(0, 10, 1, -64), BackgroundColor3 = Theme.Card, BackgroundTransparency = 0.3, Parent = sidebar, ZIndex = 12 }); corner(profile, 8); stroke(profile, Theme.Border, 1)
 local avatar = mk("ImageLabel", { Size = UDim2.fromOffset(34, 34), Position = UDim2.fromOffset(10, 10), BackgroundColor3 = Theme.Bg, Parent = profile, ZIndex = 13 }); corner(avatar, 17)
 task.spawn(function() local ok, url = pcall(function() return Players:GetUserThumbnailAsync(LP.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150) end); if ok then avatar.Image = url end end)
 mk("TextLabel", { Size = UDim2.new(1, -54, 0, 16), Position = UDim2.fromOffset(54, 12), BackgroundTransparency = 1, Text = LP.DisplayName, TextColor3 = Theme.Text, Font = Theme.FontBold, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, Parent = profile, ZIndex = 13 })
 mk("TextLabel", { Size = UDim2.new(1, -54, 0, 14), Position = UDim2.fromOffset(54, 28), BackgroundTransparency = 1, Text = "@" .. LP.Name, TextColor3 = Theme.TextMuted, Font = Theme.Font, TextSize = 10, TextXAlignment = Enum.TextXAlignment.Left, Parent = profile, ZIndex = 13 })
-local content = mk("Frame", { Size = UDim2.new(1, -220, 1, -74), Position = UDim2.new(0, 210, 0, 64), BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true, Parent = root, ZIndex = 11 }); mk("UIPadding", { PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 20), PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 10), Parent = content })
+local content = mk("Frame", { Size = UDim2.new(1, -170, 1, -74), Position = UDim2.new(0, 160, 0, 64), BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true, Parent = root, ZIndex = 11 }); mk("UIPadding", { PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 20), PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 10), Parent = content })
 self.Tabs = {}; self.ActiveTab = nil; self.Content = content
 local function ApplyFeatureSearch(query)
 query = string.lower(query or ""); local searching = query ~= ""; local cardMatches, pageMatches = {}, {}
@@ -1040,12 +1040,12 @@ local TabTeleport = Window:AddTab("Teleport")
 local TabSettings = Window:AddTab("Settings")
 
 local function SetTabCardHeight(tab, height) local grid = tab.Page:FindFirstChildOfClass("UIGridLayout"); if grid then grid.CellSize = UDim2.new(0.5, -6, 0, height) end end
-SetTabCardHeight(TabMain, 440); SetTabCardHeight(TabSurvivor, 458); SetTabCardHeight(TabKiller, 440); SetTabCardHeight(TabVisual, 440); SetTabCardHeight(TabTeleport, 440); SetTabCardHeight(TabSettings, 440)
+SetTabCardHeight(TabMain, 440); SetTabCardHeight(TabSurvivor, 540); SetTabCardHeight(TabKiller, 440); SetTabCardHeight(TabVisual, 440); SetTabCardHeight(TabTeleport, 440); SetTabCardHeight(TabSettings, 330)
 
 -- ============================================================
--- TELEPORT
+-- TELEPORT (FIXED: key Idx disamakan dengan nama kategori)
 -- ============================================================
-local TP = { Generators = {}, Hooks = {}, Gates = {}, Pallets = {}, Windows = {}, Idx = { Generator = 1, Hook = 1, Gate = 1, Pallet = 1, Window = 1 }, ScanCooldown = 0 }
+local TP = { Generators = {}, Hooks = {}, Gates = {}, Pallets = {}, Windows = {}, Idx = { Generators = 1, Hooks = 1, Gates = 1, Pallets = 1, Windows = 1 }, ScanCooldown = 0 }
 local function TP_Scan(force)
 if not force and tick() - TP.ScanCooldown < 2 then return end
 TP.ScanCooldown = tick(); table.clear(TP.Generators); table.clear(TP.Hooks); table.clear(TP.Gates); table.clear(TP.Pallets); table.clear(TP.Windows)
@@ -1060,7 +1060,7 @@ elseif n == "window" then table.insert(TP.Windows, desc) end
 elseif desc:IsA("BasePart") and desc.Name == "PrimaryPartPallet" then local parent = desc.Parent; if parent and not table.find(TP.Pallets, parent) then table.insert(TP.Pallets, parent) end end
 end
 end
-local function TP_To(part) local char = LP.Character; local hrp = char and char:FindFirstChild("HumanoidRootPart"); if not hrp or not part or not part:IsA("BasePart") then return false end; pcall(function() hrp.CFrame = part.CFrame + Vector3.new(0, 3, 0) end); return true end
+local function TP_To(part) if typeof(part) == "Instance" and part:IsA("Attachment") then part = part.Parent end; if typeof(part) == "Instance" and not part:IsA("BasePart") then part = part:FindFirstChildWhichIsA("BasePart", true) end; local char = LP.Character; local hrp = char and char:FindFirstChild("HumanoidRootPart"); if not hrp or not part or not part:IsA("BasePart") then return false end; pcall(function() hrp.CFrame = part.CFrame + Vector3.new(0, 3, 0) end); return true end
 local function TP_Cycle(category, pickPartFn, label)
 local list = TP[category]; if #list == 0 then TP_Scan(true) end
 if #list == 0 then pcall(function() StarterGui:SetCore("SendNotification", { Title = "Teleport", Text = label .. " tidak ditemukan!", Duration = 2 }) end); return end
@@ -1071,7 +1071,7 @@ TP.Idx[category] = TP.Idx[category] + 1
 end
 local tpMapCard = Window:AddCard(TabTeleport.Page, "◈", "Teleport Map")
 local refreshBtn = mk("TextButton", { Size = UDim2.new(1, -12, 0, 32), BackgroundColor3 = Color3.fromRGB(28, 24, 38), BorderSizePixel = 0, Text = "⟳ REFRESH MAP CACHE", TextColor3 = Theme.Text, Font = Theme.FontBold, TextSize = 11, AutoButtonColor = false, Parent = tpMapCard, ZIndex = 15 }); corner(refreshBtn, 8); stroke(refreshBtn, Color3.fromRGB(160, 80, 255), 1)
-refreshBtn.MouseButton1Click:Connect(function() TP.Idx.Generator, TP.Idx.Hook, TP.Idx.Gate, TP.Idx.Pallet, TP.Idx.Window = 1, 1, 1, 1, 1; TP_Scan(true); pcall(function() StarterGui:SetCore("SendNotification", { Title = "Refresh", Text = string.format("%d gen · %d hook · %d gate · %d pallet · %d window", #TP.Generators, #TP.Hooks, #TP.Gates, #TP.Pallets, #TP.Windows), Duration = 2.5 }) end) end)
+refreshBtn.MouseButton1Click:Connect(function() TP.Idx.Generators, TP.Idx.Hooks, TP.Idx.Gates, TP.Idx.Pallets, TP.Idx.Windows = 1, 1, 1, 1, 1; TP_Scan(true); pcall(function() StarterGui:SetCore("SendNotification", { Title = "Refresh", Text = string.format("%d gen · %d hook · %d gate · %d pallet · %d window", #TP.Generators, #TP.Hooks, #TP.Gates, #TP.Pallets, #TP.Windows), Duration = 2.5 }) end) end)
 local function TP_Button(parent, label, category, pickPartFn)
 local btn = mk("TextButton", { Size = UDim2.new(1, -12, 0, 34), BackgroundColor3 = Color3.fromRGB(24, 18, 34), BorderSizePixel = 0, Text = label .. " ›", TextColor3 = Theme.Text, Font = Theme.FontBold, TextSize = 11, AutoButtonColor = false, Parent = parent, ZIndex = 15 }); corner(btn, 8); stroke(btn, Color3.fromRGB(160, 80, 255), 1)
 btn.MouseEnter:Connect(function() TweenService:Create(btn, TweenInfo.new(0.12), { BackgroundColor3 = Color3.fromRGB(44, 28, 62) }):Play() end); btn.MouseLeave:Connect(function() TweenService:Create(btn, TweenInfo.new(0.12), { BackgroundColor3 = Color3.fromRGB(24, 18, 34) }):Play() end)
@@ -1220,7 +1220,7 @@ end
 end)
 
 
-local parryCard = Window:AddCard(TabSurvivor.Page, "🛡", "Mimiw Auto Parry")
+local parryCard = Window:AddCard(TabSurvivor.Page, "🛡", "[BETA] Auto Parry")
 Window:AddToggle(parryCard, "Enable Auto Parry", false, function(v) AutoParryConfig.Enabled = v end)
 Window:AddSlider(parryCard, "Parry Range", 12, 42, 18, function(v) AutoParryConfig.Range = v end)
 Window:AddSlider(parryCard, "Parry Delay (ms)", 0, 300, 80, function(v) AutoParryConfig.Delay = v / 1000 end)
@@ -1231,7 +1231,7 @@ Window:AddToggle(parryCard, "Hanya Killer", true, function(v) AutoParryConfig.Ki
 Window:AddToggle(parryCard, "Cek Arah Hadap", true, function(v) AutoParryConfig.Facing = v end)
 AddSectionDivider(parryCard, "PALLET SETTINGS")
 
-Window:AddToggle(parryCard, "Auto Drop Pallet", false, function(v)
+Window:AddToggle(parryCard, "[ BETA ]Auto Drop Pallet", false, function(v)
     AutoPalletEnabled = v
     UsedPallets = setmetatable({}, { __mode = "k" })
     if v and GUI and GUI.Debug then
@@ -1526,3 +1526,104 @@ end)
 pcall(function()
 StarterGui:SetCore("SendNotification", { Title = "HANX HUB", Text = "Script Loaded Successfully!", Duration = 5 })
 end)
+
+-- ============================================================
+-- SETTINGS TAB (BARU)
+-- ============================================================
+do
+    local root = Window.Gui:FindFirstChild("Root")
+    local bgLayer = root and root:FindFirstChild("NeonBackground")
+    local VirtualUser = game:GetService("VirtualUser")
+    local TeleportService = game:GetService("TeleportService")
+
+    local function Notify(text)
+        pcall(function()
+            StarterGui:SetCore("SendNotification", { Title = "HANX HUB", Text = text, Duration = 2.5 })
+        end)
+    end
+
+    local function SetBtn(parent, text, fn)
+        local b = mk("TextButton", {
+            Size = UDim2.new(1, -12, 0, 34), BackgroundColor3 = Color3.fromRGB(24, 18, 34),
+            BorderSizePixel = 0, Text = text .. " ›", TextColor3 = Theme.Text, Font = Theme.FontBold,
+            TextSize = 11, AutoButtonColor = false, Parent = parent, ZIndex = 15
+        })
+        corner(b, 8); stroke(b, Color3.fromRGB(160, 80, 255), 1)
+        b.MouseEnter:Connect(function() TweenService:Create(b, TweenInfo.new(0.12), { BackgroundColor3 = Color3.fromRGB(44, 28, 62) }):Play() end)
+        b.MouseLeave:Connect(function() TweenService:Create(b, TweenInfo.new(0.12), { BackgroundColor3 = Color3.fromRGB(24, 18, 34) }):Play() end)
+        b.MouseButton1Click:Connect(fn)
+        return b
+    end
+
+    -- Kartu 1: Interface
+    local uiCard = Window:AddCard(TabSettings.Page, "•", "Interface")
+    local uiScale = nil
+    if root then
+        uiScale = Instance.new("UIScale")
+        uiScale.Scale = 1
+        uiScale.Parent = root
+    end
+    Window:AddSlider(uiCard, "UI Scale (%)", 60, 130, 100, function(v)
+        if uiScale then uiScale.Scale = v / 100 end
+    end)
+    Window:AddSlider(uiCard, "Window Transparency (%)", 0, 70, 0, function(v)
+        if root then root.BackgroundTransparency = v / 100 end
+        if bgLayer then bgLayer.BackgroundTransparency = 0.22 + (v / 100) * 0.7 end
+    end)
+    SetBtn(uiCard, "RESET UI POSITION", function()
+        if not root then return end
+        local sc = uiScale and uiScale.Scale or 1
+        root.Position = UDim2.new(0.5, -(root.Size.X.Offset * sc) / 2, 0.5, -(root.Size.Y.Offset * sc) / 2 + 25)
+        Notify("Posisi UI direset.")
+    end)
+
+    -- Kartu 2: Utilities
+    local utilCard = Window:AddCard(TabSettings.Page, "•", "Utilities")
+    local afkConn = nil
+    Window:AddToggle(utilCard, "Anti AFK", false, function(v)
+        if afkConn then afkConn:Disconnect(); afkConn = nil end
+        if v then
+            afkConn = LP.Idled:Connect(function()
+                pcall(function()
+                    VirtualUser:CaptureController()
+                    VirtualUser:ClickButton2(Vector2.new())
+                end)
+            end)
+        end
+    end)
+    SetBtn(utilCard, "FPS BOOST (LOW GRAPHICS)", function()
+        pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Level01 end)
+        pcall(function()
+            local lighting = game:GetService("Lighting")
+            lighting.GlobalShadows = false
+            for _, e in ipairs(lighting:GetChildren()) do
+                if e:IsA("PostEffect") or e:IsA("Atmosphere") then e.Enabled = false end
+            end
+        end)
+        Notify("FPS Boost aktif.")
+    end)
+    SetBtn(utilCard, "REJOIN SERVER", function()
+        Notify("Rejoin...")
+        pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LP) end)
+    end)
+    SetBtn(utilCard, "UNLOAD HANX HUB", function()
+        ESP.Master = false
+        pcall(ClearAllESP)
+        if espConn then espConn:Disconnect(); espConn = nil end
+        pcall(KE_StopStalk); pcall(KE_StopCounterParry)
+        KillerExtras.NoSlowdown.Enabled = false
+        PistolConfig.Enabled = false
+        VeilConfig.Enabled = false
+        AutoParryConfig.Enabled = false
+        FastVaultEnabled = false
+        AutoPalletEnabled = false
+        SkillCheckState.Enabled = false
+        if SkillCheckState.HeartbeatConn then SkillCheckState.HeartbeatConn:Disconnect(); SkillCheckState.HeartbeatConn = nil end
+        if afkConn then afkConn:Disconnect(); afkConn = nil end
+        pcall(function() if PistolConfig.LaserBeam then PistolConfig.LaserBeam:Destroy() end end)
+        pcall(function() if VeilConfig.LaserBeam then VeilConfig.LaserBeam:Destroy() end end)
+        pcall(function() if AutoParryVisuals.RangePart then AutoParryVisuals.RangePart:Destroy() end end)
+        pcall(function() if AutoParryVisuals.Gui then AutoParryVisuals.Gui:Destroy() end end)
+        Window.Gui:Destroy()
+    end)
+end
