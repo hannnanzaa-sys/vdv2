@@ -1,4 +1,4 @@
--- Lua | Roblox Luau LocalScript | Violence District | HANX HUB (ANDROID MOBILE FIX)
+-- Lua | Roblox Luau LocalScript | Violence District | HANX HUB (ANDROID READY)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
@@ -900,7 +900,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- UI LIBRARY HANX HUB (ANDROID MOBILE FIX)
+-- UI LIBRARY HANX HUB (ANDROID FIXED)
 -- ============================================================
 local Theme = { Bg = Color3.fromRGB(12, 12, 16), Panel = Color3.fromRGB(18, 18, 24), Card = Color3.fromRGB(24, 24, 32), CardHover = Color3.fromRGB(32, 32, 42), Border = Color3.fromRGB(48, 48, 58), Text = Color3.fromRGB(240, 240, 245), TextMuted = Color3.fromRGB(140, 140, 155), Accent = Color3.fromRGB(160, 80, 255), Font = Enum.Font.Gotham, FontMedium = Enum.Font.GothamMedium, FontBold = Enum.Font.GothamBold, }
 local function mk(class, props) local obj = Instance.new(class); for k, v in pairs(props or {}) do obj[k] = v end; return obj end
@@ -916,14 +916,12 @@ local UI = {}; UI.__index = UI
 local SearchRegistry = {}
 function UI.new()
 local self = setmetatable({}, UI)
--- FIX ANDROID: Pindah dari gethui/CoreGui ke PlayerGui
+-- FIX ANDROID: Pindah dari CoreGui ke PlayerGui
 local parent = LP:WaitForChild("PlayerGui")
 local old = parent:FindFirstChild("HanxHubUI"); if old then old:Destroy() end
--- FIX ANDROID: DisplayOrder tinggi biar nutupin UI game
 self.Gui = mk("ScreenGui", { Name = "HanxHubUI", ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = 999, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, Parent = parent })
 -- FIX ANDROID: Ukuran diubah jadi muat di HP
 local W, H = 340, 240
--- FIX ANDROID: Posisi tepat di tengah layar
 local root = mk("Frame", { Name = "Root", Size = UDim2.fromOffset(W, H), Position = UDim2.new(0.5, -W/2, 0.5, -H/2), BackgroundColor3 = Theme.Bg, BorderSizePixel = 0, Parent = self.Gui, ZIndex = 10 })
 corner(root, 12); stroke(root, Theme.Border, 1)
 local bgLayer = mk("Frame", { Name = "NeonBackground", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(5, 3, 12), BorderSizePixel = 0, BackgroundTransparency = 0.22, ClipsDescendants = true, Parent = root, ZIndex = 10 })
