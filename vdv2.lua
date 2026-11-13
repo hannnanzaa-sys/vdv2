@@ -880,7 +880,7 @@ task.spawn(function()
         if not FastVaultEnabled then return OriginalVault(self, vaultPoint, sprinting, requestId) end
         if self.isVaulting then return end
         if self.isSlidingPallet ~= nil then self.isSlidingPallet = false end
-        if self.character then pcall(function() self.character:SetAttribute("vaultspeed", 2.0) end end)
+                if self.character then pcall(function() self.character:SetAttribute("vaultspeed", 2.0) end) end
         local packed = table.pack(pcall(function() return OriginalVault(self, vaultPoint, true, requestId) end))
         if not packed[1] then if self.character then pcall(function() self.character:SetAttribute("vaultspeed", 1) end) end; return end
         task.delay(0.15, function()
